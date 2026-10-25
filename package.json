@@ -1,0 +1,30 @@
+{
+  "name": "openpromo",
+  "private": true,
+  "version": "0.1.0",
+  "description": "OpenPromo: open-source promo media from your website. Images, reels and videos on brand, self-hosted or at openpromo.gg.",
+  "license": "MIT",
+  "packageManager": "pnpm@10.30.3",
+  "engines": {
+    "node": ">=26"
+  },
+  "scripts": {
+    "dev": "pnpm -r --parallel --filter ./apps/* dev",
+    "dev:api": "pnpm --filter @openpromo/api dev",
+    "dev:app": "pnpm --filter @openpromo/app dev",
+    "dev:web": "pnpm --filter @openpromo/web dev",
+    "db:generate": "pnpm --filter @openpromo/api db:generate",
+    "db:migrate": "pnpm --filter @openpromo/api db:migrate",
+    "typecheck": "pnpm -r typecheck",
+    "test": "pnpm -r test"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "esbuild",
+      "sharp",
+      "@tailwindcss/oxide",
+      "ffmpeg-static",
+      "puppeteer"
+    ]
+  }
+}

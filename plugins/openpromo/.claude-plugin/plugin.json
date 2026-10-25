@@ -1,0 +1,8 @@
+{
+  "name": "openpromo",
+  "version": "0.1.0",
+  "description": "OpenPromo over MCP, with skills for on-brand social posts, reels, promo videos and tutorials. Set OPENPROMO_API_KEY (an opro_ key from Settings) and, when self-hosting, OPENPROMO_MCP_URL.",
+  "author": { "name": "OpenPromo" },
+  "license": "MIT",
+  "keywords": ["marketing", "social-media", "video", "reels", "mcp", "brand"]
+}

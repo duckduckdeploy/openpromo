@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 320" role="img" aria-label="OpenPromo: open-source promo media from your website">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#fff7f0"/>
+      <stop offset="1" stop-color="#fbe4d9"/>
+    </linearGradient>
+  </defs>
+  <rect width="1280" height="320" rx="24" fill="url(#bg)"/>
+  <g transform="translate(96 108)">
+    <rect width="104" height="104" rx="26" fill="#c93a1f"/>
+    <path d="M35.75 30.9v42.2a3.25 3.25 0 0 0 4.9 2.8l35.75-21.1a3.25 3.25 0 0 0 0-5.6L40.65 28.1a3.25 3.25 0 0 0-4.9 2.8Z" fill="#fff"/>
+    <path d="M81.25 17.9v9.75M76.4 22.75h9.75" stroke="#fff" stroke-width="5.2" stroke-linecap="round"/>
+  </g>
+  <text x="232" y="168" font-family="Bricolage Grotesque, Inter, Segoe UI, sans-serif" font-size="68" font-weight="800" fill="#17130f" letter-spacing="-1.5">OpenPromo</text>
+  <text x="234" y="214" font-family="Inter, Segoe UI, sans-serif" font-size="26" fill="#544c44">Your website in, on-brand posts, reels and videos out. Open source.</text>
+  <g transform="translate(980 52)">
+    <rect x="0" y="34" width="96" height="170" rx="12" fill="#c93a1f"/>
+    <rect x="12" y="150" width="58" height="10" rx="5" fill="#fff" opacity=".9"/>
+    <rect x="12" y="168" width="40" height="10" rx="5" fill="#fff" opacity=".6"/>
+    <rect x="110" y="0" width="150" height="150" rx="12" fill="#fff" stroke="#f0cfc2" stroke-width="2"/>
+    <rect x="124" y="22" width="90" height="14" rx="7" fill="#17130f"/>
+    <rect x="124" y="44" width="70" height="14" rx="7" fill="#17130f"/>
+    <rect x="124" y="108" width="62" height="22" rx="11" fill="#c93a1f"/>
+    <rect x="110" y="164" width="150" height="86" rx="12" fill="#17130f"/>
+    <path d="M176 192v30l24-15z" fill="#fff"/>
+  </g>
+</svg>

@@ -1,0 +1,14 @@
+{
+  "name": "openpromo",
+  "owner": { "name": "OpenPromo" },
+  "metadata": {
+    "description": "The OpenPromo plugin: the MCP connection plus skills for making promo media from a website."
+  },
+  "plugins": [
+    {
+      "name": "openpromo",
+      "source": "./plugins/openpromo",
+      "description": "Connect to OpenPromo over MCP and get skills: brand check, content plan, social posts, promo reels and tutorial videos."
+    }
+  ]
+}

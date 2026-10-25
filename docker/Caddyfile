@@ -1,0 +1,29 @@
+# HTTPS in front of OpenPromo, for `docker compose --profile https up -d`.
+# Needs DNS records for OPENPROMO_DOMAIN, app.OPENPROMO_DOMAIN and api.OPENPROMO_DOMAIN pointing at
+# this server, and ports 80 and 443 open. Certificates come from Let's Encrypt automatically.
+
+(common) {
+	encode zstd gzip
+	header {
+		Strict-Transport-Security "max-age=31536000"
+		X-Content-Type-Options "nosniff"
+		Referrer-Policy "strict-origin-when-cross-origin"
+		-Server
+	}
+}
+
+{$OPENPROMO_DOMAIN} {
+	import common
+	reverse_proxy web:3101
+}
+
+app.{$OPENPROMO_DOMAIN} {
+	import common
+	header X-Frame-Options "DENY"
+	reverse_proxy app:3200
+}
+
+api.{$OPENPROMO_DOMAIN} {
+	import common
+	reverse_proxy api:4100
+}

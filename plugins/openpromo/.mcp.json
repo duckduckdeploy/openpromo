@@ -1,0 +1,11 @@
+{
+  "mcpServers": {
+    "openpromo": {
+      "type": "http",
+      "url": "${OPENPROMO_MCP_URL:-https://api.openpromo.gg/mcp}",
+      "headers": {
+        "Authorization": "Bearer ${OPENPROMO_API_KEY}"
+      }
+    }
+  }
+}
