@@ -6,7 +6,7 @@
   "license": "MIT",
   "packageManager": "pnpm@10.30.3",
   "engines": {
-    "node": ">=26"
+    "node": ">=26 <27"
   },
   "scripts": {
     "dev": "pnpm -r --parallel --filter ./apps/* dev",

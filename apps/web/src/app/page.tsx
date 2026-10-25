@@ -1,3 +1,4 @@
+import { AppScreenshot } from '@/components/app-screenshot';
 import Link from 'next/link';
 import { ArrowRight, Check, Code2, Container } from 'lucide-react';
 import { AgentFold } from '@/components/agent-fold';
@@ -92,7 +93,6 @@ export default function HomePage() {
             </p>
           </div>
 
-          {/* TODO: add a screenshot of the dashboard (brand profile or editor) here once app screenshots exist. */}
           <figure className="animate-rise mx-auto mt-14 max-w-5xl [animation-delay:200ms] md:mt-16">
             <div className="frame-glow">
               <div className="grid grid-cols-3 items-center gap-3 sm:gap-6">
@@ -137,7 +137,7 @@ export default function HomePage() {
             </li>
           ))}
         </ol>
-        {/* TODO: add a screenshot of the brand profile page here once app screenshots exist. */}
+        <AppScreenshot id="brandProfile" className="mt-14 md:mt-16" />
       </Band>
 
       {/* Examples */}

@@ -134,14 +134,15 @@ export function videoDocument(input: VideoInput): string {
     const t0 = start / 1000;
     const entrance =
       scene.transition === "slide"
-        ? `{ xPercent: 8, opacity: 0 }, { xPercent: 0, opacity: 1, duration: 0.45, ease: "power3.out" }`
+        ? `{ xPercent: 8, opacity: 0.6 }, { xPercent: 0, opacity: 1, duration: 0.45, ease: "power3.out" }`
         : scene.transition === "zoom"
-          ? `{ scale: 1.08, opacity: 0 }, { scale: 1, opacity: 1, duration: 0.5, ease: "power2.out" }`
+          ? `{ scale: 1.08, opacity: 0.6 }, { scale: 1, opacity: 1, duration: 0.5, ease: "power2.out" }`
           : scene.transition === "cut"
             ? `{ opacity: 1 }, { opacity: 1, duration: 0.01 }`
-            : `{ opacity: 0 }, { opacity: 1, duration: 0.35, ease: "power1.out" }`;
+            : `{ opacity: 0.6 }, { opacity: 1, duration: 0.35, ease: "power1.out" }`;
     tl.push(`tl.fromTo("#scene-${i} .content", ${entrance}, ${t0.toFixed(3)});`);
-    tl.push(`tl.from("#scene-${i} .in", { opacity: 0, y: ${Math.round(Math.min(width, height) * 0.04)}, duration: 0.5, ease: "power3.out", stagger: 0.12 }, ${(t0 + 0.12).toFixed(3)});`);
+    // Never from fully transparent: a cut would show one empty frame of background, a visible flash.
+    tl.push(`tl.from("#scene-${i} .in", { opacity: 0.2, y: ${Math.round(Math.min(width, height) * 0.04)}, duration: 0.5, ease: "power3.out", stagger: 0.12 }, ${(t0 + 0.12).toFixed(3)});`);
   });
 
   input.captions.forEach((cue, i) => {

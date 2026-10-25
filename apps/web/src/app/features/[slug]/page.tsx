@@ -1,3 +1,4 @@
+import { AppScreenshot } from '@/components/app-screenshot';
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
@@ -124,7 +125,7 @@ export default async function FeaturePage({ params }: FeaturePageProps) {
             <div className="mx-auto mt-14 max-w-6xl">
               <ExampleGallery ids={feature.examples} />
             </div>
-            {/* TODO: add a screenshot of this tool in the dashboard here once app screenshots exist. */}
+            {feature.screen ? <AppScreenshot id={feature.screen} className="mt-16" /> : null}
           </div>
         </section>
 

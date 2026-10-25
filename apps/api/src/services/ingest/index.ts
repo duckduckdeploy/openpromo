@@ -1,11 +1,11 @@
 import { brandProfile, type BrandProfile } from "@openpromo/shared";
 import type { YepApi } from "@openpromo/yepapi";
-import { eq } from "drizzle-orm";
+import { and, eq, lt } from "drizzle-orm";
 import type { HTTPResponse } from "puppeteer";
 import sharp from "sharp";
 import { dataDb, schema } from "../../db";
 import { env } from "../../env";
-import { saveAsset } from "../../lib/media-store";
+import { deleteAsset, saveAsset } from "../../lib/media-store";
 import { ingestGuardOptions } from "../../lib/ingest-guard";
 import { assertSafeUrl } from "../../lib/ssrf";
 import { errorMessage, getYep } from "../../lib/yep";
@@ -164,6 +164,7 @@ async function readWithYep(yep: YepApi, url: string): Promise<PageText> {
  */
 export async function ingestProject(project: Project): Promise<void> {
   const projectId = project.id;
+  const startedAt = new Date();
   const yep = await getYep({ userId: project.userId, projectId, feature: "brand" });
   await assertSafeUrl(project.url, ingestGuardOptions());
 
@@ -280,7 +281,8 @@ export async function ingestProject(project: Project): Promise<void> {
         colors: pickColors(home.colors, home.metadata.themeColor, logoHex),
         heading: pickFont(home.fonts.heading, googleFamilies(home.fonts.googleLinks)),
         body: pickFont(home.fonts.body, googleFamilies(home.fonts.googleLinks)),
-        radius: Math.max(0, Math.min(48, Math.round(home.radius ?? 12))),
+        // Pill buttons (radius 999px) say nothing about cards and panels: they get a soft 16px.
+        radius: (home.radius ?? 12) >= 40 ? 16 : Math.max(0, Math.min(32, Math.round(home.radius ?? 12))),
       }
     : null;
   const hints = [
@@ -345,6 +347,26 @@ export async function ingestProject(project: Project): Promise<void> {
     // A project named after its domain (the default) takes the business name once it is known.
     .set({ brand, brandStatus: "ready", brandError: null, brandProgress: null, brandUpdatedAt: new Date(), name: !project.name || project.name === project.domain ? brand.identity.name : project.name })
     .where(eq(schema.projects.id, projectId));
+  await pruneOldSiteFiles(projectId, startedAt, brand);
+}
+
+/**
+ * Files from earlier reads of the site that nothing uses any more: not the brand profile (an
+ * edited logo stays) and not any creation. Without this every re-read would add another full set
+ * of screenshots and photos.
+ */
+async function pruneOldSiteFiles(projectId: string, before: Date, brand: BrandProfile): Promise<void> {
+  const old = await dataDb
+    .select()
+    .from(schema.assets)
+    .where(and(eq(schema.assets.projectId, projectId), eq(schema.assets.source, "website"), lt(schema.assets.createdAt, before)));
+  if (!old.length) return;
+  const creations = await dataDb.select({ spec: schema.creations.spec }).from(schema.creations).where(eq(schema.creations.projectId, projectId));
+  const used = JSON.stringify([brand, creations.map((c) => c.spec)]);
+  for (const asset of old) {
+    if (used.includes(asset.id)) continue;
+    await deleteAsset(asset).catch((error: Error) => console.warn(`ingest ${projectId}: could not remove ${asset.id}: ${error.message}`));
+  }
 }
 
 /** The job wrapper: records a failure on the project instead of throwing it away. */

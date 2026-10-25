@@ -1,3 +1,4 @@
+import type { ScreenId } from './screens';
 import {
   Clapperboard,
   GalleryHorizontal,
@@ -46,6 +47,8 @@ export interface Feature {
   /** Meta description, 120 to 155 characters. */
   description: string;
   icon: LucideIcon;
+  /** A dashboard screenshot (content/screens.ts) shown under the examples. */
+  screen?: ScreenId;
   /** Example images (ids in content/examples.ts) and the H2 above them. */
   examples: string[];
   examplesTitle: string;
@@ -82,6 +85,7 @@ export const PRICES = {
 export const features: Feature[] = [
   {
     slug: 'brand-kit-generator',
+    screen: 'brandProfile',
     name: 'Brand kit generator',
     seoTitle: 'Brand Kit Generator: Your Brand DNA from a URL',
     h1: 'Brand Kit Generator',
@@ -159,6 +163,7 @@ export const features: Feature[] = [
   },
   {
     slug: 'instagram-post-generator',
+    screen: 'carouselEditor',
     name: 'Instagram post generator',
     seoTitle: 'Instagram Post Generator That Knows Your Brand',
     h1: 'Instagram Post Generator',
@@ -214,6 +219,7 @@ export const features: Feature[] = [
   },
   {
     slug: 'carousel-maker',
+    screen: 'carouselEditor',
     name: 'Carousel maker',
     seoTitle: 'Carousel Maker for Instagram and LinkedIn',
     h1: 'Carousel Maker',
@@ -265,6 +271,7 @@ export const features: Feature[] = [
   },
   {
     slug: 'banner-maker',
+    screen: 'mediaLibrary',
     name: 'Banner maker',
     seoTitle: 'Banner Maker: Ad, X and LinkedIn Banners',
     h1: 'Banner Maker',
@@ -310,6 +317,7 @@ export const features: Feature[] = [
   },
   {
     slug: 'ai-reel-generator',
+    screen: 'reelEditor',
     name: 'AI reel generator',
     seoTitle: 'AI Reel Generator for Reels, TikTok and Shorts',
     h1: 'AI Reel Generator',
@@ -370,6 +378,7 @@ export const features: Feature[] = [
   },
   {
     slug: 'url-to-video',
+    screen: 'reelEditor',
     name: 'URL to video',
     seoTitle: 'URL to Video: Promo Videos from Your Website',
     h1: 'URL to Video',
@@ -422,6 +431,7 @@ export const features: Feature[] = [
   },
   {
     slug: 'product-demo-video-maker',
+    screen: 'reelEditor',
     name: 'Product demo video maker',
     seoTitle: 'Product Demo Video Maker with AI Voiceover',
     h1: 'Product Demo Video Maker',
@@ -468,6 +478,7 @@ export const features: Feature[] = [
   },
   {
     slug: 'instagram-caption-generator',
+    screen: 'postIdeas',
     name: 'Instagram caption generator',
     seoTitle: 'Instagram Caption Generator and Post Ideas',
     h1: 'Instagram Caption Generator',

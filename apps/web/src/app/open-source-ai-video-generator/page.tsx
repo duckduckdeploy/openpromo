@@ -1,3 +1,4 @@
+import { ExampleReel } from '@/components/app-screenshot';
 import Link from 'next/link';
 import { ArrowRight, Check, Container, X } from 'lucide-react';
 import { Band } from '@/components/band';
@@ -76,7 +77,7 @@ export default function VideoGeneratorPage() {
         <div className="mx-auto mt-6 max-w-6xl">
           <ExampleGallery ids={LANDSCAPE_EXAMPLES} labels={false} />
         </div>
-        {/* TODO: embed a rendered example reel (MP4 with poster) here once one is published. */}
+        <ExampleReel className="mt-14" />
       </Band>
 
       <Band tone="peach" labelledBy="kinds-title">

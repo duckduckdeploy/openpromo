@@ -3,6 +3,8 @@ import type { NextConfig } from "next";
 const apiUrl = process.env.API_URL ?? "http://localhost:4100";
 
 const config: NextConfig = {
+  // No Next.js badge in the corner of the dashboard during development (it ends up in screenshots).
+  devIndicators: false,
   transpilePackages: ["@openpromo/shared"],
   // Uploads (photos, clips, music) are streamed to the API; the default 10 MB proxy limit is too small.
   experimental: { proxyClientMaxBodySize: "200mb" },

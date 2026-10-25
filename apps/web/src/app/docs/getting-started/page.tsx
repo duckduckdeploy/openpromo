@@ -1,3 +1,4 @@
+import { AppScreenshot } from '@/components/app-screenshot';
 import Link from 'next/link';
 import { Callout, Step, Steps, Ui } from '@/components/doc-blocks';
 import { DocArticle } from '@/components/doc-page';
@@ -23,7 +24,6 @@ export default function GettingStartedPage() {
         what you spend.
       </p>
 
-      {/* TODO: add screenshots of Settings, the brand profile and the editor next to these steps once app screenshots exist. */}
       <Steps>
         <Step title="Create a YepAPI account">
           <p>
@@ -66,6 +66,8 @@ export default function GettingStartedPage() {
           </p>
         </Step>
       </Steps>
+      <AppScreenshot id="brandProfile" className="my-10" />
+      <AppScreenshot id="carouselEditor" className="my-10" />
 
       <Callout tone="cost" title="When credits run out">
         <p>

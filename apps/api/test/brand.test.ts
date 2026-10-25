@@ -119,6 +119,7 @@ describe("brand profile", () => {
     const created = await api.ok<{ id: string }>("POST", "/projects", { url: siteUrl });
     await ingest(created.id);
     const { brand } = await api.ok("GET", `/projects/${created.id}`);
+    const firstShots = (await api.ok<unknown[]>("GET", `/projects/${created.id}/assets?role=screenshot`)).length;
 
     const edited = { ...brand, identity: { ...brand.identity, tagline: "Bread worth waking up for" }, voice: { ...brand.voice, tone: "playful" } };
     const saved = await api.ok("PUT", `/projects/${created.id}/brand`, { brand: edited });
@@ -130,6 +131,9 @@ describe("brand profile", () => {
     const again = await api.ok("GET", `/projects/${created.id}`);
     expect(again.brand.identity.tagline).toBe("Bread worth waking up for");
     expect(again.brand.voice.tone).toBe("playful");
+    // Files from the first read that nothing uses were replaced, not piled up.
+    const shots = await api.ok<{ role: string }[]>("GET", `/projects/${created.id}/assets?role=screenshot`);
+    expect(shots.length).toBe(firstShots);
   });
 
   it("records a failure on the project instead of losing it", { timeout: 60_000 }, async () => {

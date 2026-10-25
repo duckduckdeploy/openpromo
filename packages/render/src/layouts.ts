@@ -216,7 +216,7 @@ body { font-family: var(--font-body); color: var(--text); -webkit-font-smoothing
 .product-grid { display: grid; grid-template-rows: minmax(0, 1.2fr) auto; grid-template-columns: minmax(0, 1fr); gap: 5cqmin; align-items: center; }
 .shape-wide .product-grid, .shape-square .product-grid { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); grid-template-rows: minmax(0, 1fr); }
 .product-media { position: relative; width: 100%; max-height: 100%; aspect-ratio: 1; justify-self: center; align-self: center; min-height: 0; background: var(--tint); border-radius: calc(var(--radius) * 2); }
-.shape-tall .product-media { width: auto; height: 100%; }
+.shape-tall .product-media { width: 100%; height: auto; }
 .product-media .product-img { position: absolute; inset: 5cqmin; width: auto; height: auto; }
 .look-bold .product-media { background: color-mix(in srgb, var(--on-primary) 16%, transparent); }
 .product-img { border-radius: var(--radius); }

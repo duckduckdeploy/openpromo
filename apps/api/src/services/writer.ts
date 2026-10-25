@@ -61,18 +61,18 @@ export function brandBrief(brand: BrandProfile): string {
 const ideasSchema = z.object({
   ideas: z.array(
     z.object({
-      title: z.string().describe("Working title, under 8 words"),
+      title: z.string().min(3).describe("Working title, under 8 words"),
       goal: z.enum(Object.keys(IDEA_GOALS) as [IdeaGoal, ...IdeaGoal[]]),
       type: z.enum(["image", "carousel", "reel", "promo", "tutorial"]),
       channel: z.enum(CHANNELS),
-      hook: z.string().describe("The opening line or headline that stops the scroll"),
+      hook: z.string().min(5).describe("The opening line or headline that stops the scroll"),
       body: z.string().describe("What the post shows, in 1–3 sentences"),
-      caption: z.string().describe("The post caption, ready to paste, in the brand's voice, 1–4 short lines"),
+      caption: z.string().min(10).describe("The post caption, ready to paste, in the brand's voice, 1–4 short lines"),
       hashtags: z.array(z.string()).describe("3–8 relevant hashtags without #"),
       cta: z.string(),
       pointIds: z.array(z.string()).describe("Ids of the selling points this idea relies on"),
     }),
-  ),
+  ).min(1),
 });
 export type DraftIdea = z.infer<typeof ideasSchema>["ideas"][number];
 
@@ -100,7 +100,7 @@ export async function writeIdeas(
   });
   const known = new Set(input.brand.positioning.points.map((p) => p.id));
   return {
-    ideas: data.ideas.slice(0, input.count).map((idea) => ({ ...idea, hashtags: idea.hashtags.map((h) => h.replace(/^#/, "")).slice(0, 10), pointIds: idea.pointIds.filter((id) => known.has(id)) })),
+    ideas: data.ideas.filter((idea) => idea.title.trim() && idea.hook.trim()).slice(0, input.count).map((idea) => ({ ...idea, hashtags: idea.hashtags.map((h) => h.replace(/^#/, "")).slice(0, 10), pointIds: idea.pointIds.filter((id) => known.has(id)) })),
     costUsd,
   };
 }

@@ -86,6 +86,12 @@ describe("checks", () => {
     expect(ids).toEqual(expect.arrayContaining(["media-missing", "generic-phrase", "figure-unverified", "point-unknown", "hook-missing", "cta-missing"]));
   });
 
+  it("reads number words on the site as figures", () => {
+    const spec = creationSpec.parse({ scenes: [{ id: "a", layout: "stat", text: { stat: "4 days", headline: "Fresh for longer" } }] });
+    const ids = checkCreation({ type: "image", spec, brand, pages: ["Our bread keeps for four days."] }).map((c) => c.id);
+    expect(ids).not.toContain("figure-unverified");
+  });
+
   it("accepts figures that are on the site", () => {
     const spec = creationSpec.parse({ scenes: [{ id: "a", layout: "offer", text: { stat: "20% off", headline: "your first box" } }] });
     expect(checkCreation({ type: "image", spec, brand }).filter((c) => c.id === "figure-unverified")).toEqual([]);
