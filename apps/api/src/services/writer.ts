@@ -1,4 +1,5 @@
 import {
+  type CaptionPreset,
   CHANNELS,
   CREATION_TYPES,
   creationSpec,
@@ -137,6 +138,7 @@ const writtenScene = z.object({
   durationSeconds: z.number().describe("Seconds on screen (videos only)"),
   transition: z.enum(["cut", "fade", "slide", "zoom"]),
   pointIds: z.array(z.string()),
+  emphasis: z.array(z.string()).describe("Videos: 1 or 2 key words copied exactly from this scene's narration (a product, price or result) that the captions show in colour; empty for images"),
 });
 
 const writtenCreation = z.object({
@@ -172,6 +174,13 @@ function defaultMusic(brand: BrandProfile): string {
     urgent: "driving energetic synth beat, 128 bpm",
   };
   return mood[brand.voice.tone] ?? mood.friendly!;
+}
+
+/** A caption look that suits the video and the brand's voice. */
+function defaultCaptionPreset(type: CreationType, brand: BrandProfile): CaptionPreset {
+  if (type === "tutorial") return "karaoke-pill-dark";
+  const byTone: Record<string, CaptionPreset> = { premium: "minimal", calm: "minimal", technical: "karaoke-pill-dark", friendly: "box-highlight" };
+  return byTone[brand.voice.tone] ?? "bold-pop";
 }
 
 export type DraftInput = {
@@ -226,6 +235,8 @@ export async function writeCreation(yep: YepApi, input: DraftInput): Promise<{ t
     narration: isVideo && input.voice !== false ? s.narration : "",
     transition: s.transition,
     pointIds: s.pointIds.filter((id) => points.has(id)),
+    // Only words the voice actually says can be highlighted.
+    emphasis: isVideo ? (s.emphasis ?? []).filter((w) => w.trim() && w.length <= 40 && s.narration.toLowerCase().includes(w.toLowerCase())).slice(0, 3) : [],
   }));
   // Writers pick lengths that are too short to read or say; stretch each scene to fit both.
   if (isVideo) {
@@ -245,6 +256,7 @@ export async function writeCreation(yep: YepApi, input: DraftInput): Promise<{ t
       music: { assetId: null, prompt: isVideo ? data.musicPrompt.trim() || defaultMusic(input.brand) : "", volume: 0.18 },
     },
     captions: isVideo ? "word" : "none",
+    captionStyle: { preset: defaultCaptionPreset(input.type, input.brand), position: "lower", accent: null },
     posterSceneId: scenes[0]!.id,
   });
   return { title: data.title.slice(0, 120) || "Untitled", caption: data.caption, spec, costUsd };

@@ -2,11 +2,12 @@ import { copyFile, mkdir, readFile, rm, writeFile } from "node:fs/promises";
 import { createRequire } from "node:module";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
-import { captionCues, imageDocument, toSrt, videoDocument, type CaptionCue, type DocumentInput, type RenderAssets, type VoiceClip } from "@openpromo/render";
-import { CREATION_TYPES, MEDIA_FORMATS, type BrandProfile, type CreationSpec, type MediaFormat, type MediaRef } from "@openpromo/shared";
+import { captionCues, captionLimits, captionPreset, imageDocument, toSrt, videoDocument, type CaptionCue, type DocumentInput, type RenderAssets, type SpokenLine, type VoiceClip } from "@openpromo/render";
+import { CREATION_TYPES, creationSpec, MEDIA_FORMATS, type BrandProfile, type CreationSpec, type MediaFormat, type MediaRef } from "@openpromo/shared";
 import { nearestAspectRatio } from "@openpromo/yepapi";
 import { eq, inArray } from "drizzle-orm";
 import { dataDb, schema } from "../../db";
+import { voicedSpans } from "../../lib/ffmpeg";
 import { localFile, mediaRoot, saveAsset, type Asset } from "../../lib/media-store";
 import { errorMessage } from "../../lib/yep";
 import { withPage } from "../browser";
@@ -259,15 +260,17 @@ async function renderVideo(ctx: Ctx, render: Render, voice: Map<string, Asset>, 
     ctx.spec.scenes.map((s) => voice.get(s.id)?.durationMs ?? null),
   );
   const voiceClips: VoiceClip[] = [];
-  const spoken: Array<{ text: string; startMs: number; durationMs: number }> = [];
-  ctx.spec.scenes.forEach((scene, i) => {
+  const spoken: SpokenLine[] = [];
+  for (const [i, scene] of ctx.spec.scenes.entries()) {
     const line = voice.get(scene.id);
-    if (!line?.durationMs) return;
+    if (!line?.durationMs) continue;
     const startMs = timing.starts[i]! + 150;
+    const file = path.join(folder.dir, folder.assets.files[line.id]!.path);
     voiceClips.push({ path: folder.assets.files[line.id]!.path, startMs, durationMs: line.durationMs });
-    spoken.push({ text: scene.narration, startMs, durationMs: line.durationMs });
-  });
-  const captions: CaptionCue[] = ctx.spec.captions === "none" ? [] : captionCues(spoken, ctx.spec.captions === "line" ? { maxWords: 9, maxChars: 48 } : {});
+    const voiced = ctx.spec.captions === "none" ? [] : await voicedSpans(file, line.durationMs);
+    spoken.push({ text: scene.narration, startMs, durationMs: line.durationMs, voiced, emphasis: scene.emphasis });
+  }
+  const captions: CaptionCue[] = ctx.spec.captions === "none" ? [] : captionCues(spoken, captionLimits(captionPreset(ctx.spec.captions, ctx.spec.captionStyle)));
 
   const html = videoDocument({
     brand: ctx.brand,
@@ -322,7 +325,7 @@ export async function runRender(renderId: string): Promise<void> {
 
   await dataDb.update(schema.renders).set({ status: "running", startedAt: new Date(), progress: 2 }).where(eq(schema.renders.id, renderId));
   await dataDb.update(schema.creations).set({ status: "rendering", error: null }).where(eq(schema.creations.id, creation.id));
-  const ctx: Ctx = { project, creation, brand: project.brand, spec: structuredClone(creation.spec), format: render.format };
+  const ctx: Ctx = { project, creation, brand: project.brand, spec: creationSpec.parse(structuredClone(creation.spec)), format: render.format };
   try {
     await fillSceneMedia(ctx);
     await progress(renderId, 20);

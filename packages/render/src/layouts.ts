@@ -231,9 +231,10 @@ body { font-family: var(--font-body); color: var(--text); -webkit-font-smoothing
 .device img, .device video { display: block; max-width: 100%; max-height: 100%; min-height: 0; object-fit: contain; border-radius: calc(var(--radius) * 1.2); background: #fff; box-shadow: 0 3cqmin 8cqmin rgba(0,0,0,.22); border: 1cqmin solid #1d1d1f; border-top-width: 3cqmin; }
 
 /* Captions (video): a chunk at a time, the spoken word highlighted. */
-.caption { position: absolute; left: 6cqw; right: 6cqw; bottom: 16cqh; display: flex; justify-content: center; z-index: 50; }
-.shape-wide .caption { bottom: 7cqh; }
-.caption-box { font-family: var(--font-body); font-weight: 800; font-size: 5.4cqmin; line-height: 1.25; text-align: center; color: #fff; background: rgba(12, 12, 14, .72); padding: 1.4cqmin 2.8cqmin; border-radius: 2cqmin; box-decoration-break: clone; -webkit-box-decoration-break: clone; }
-.caption-box .w { display: inline-block; margin: 0 .12em; }
-.caption-box .w.on { color: var(--caption-hi, #ffd84d); transform: scale(1.06); }
+/* Video scenes make room for captions (and, on 9:16, for the platforms' own buttons and text). */
+.ui-room.shape-tall .content { padding-top: 15cqh; padding-bottom: 35cqh; }
+.cap-room-lower.shape-tall .content { padding-top: 15cqh; padding-bottom: 50cqh; }
+.cap-room-upper.shape-tall .content { padding-top: 30cqh; padding-bottom: 35cqh; }
+.cap-room-lower.shape-wide .content, .cap-room-lower.shape-square .content { padding-bottom: 25cqh; }
+.cap-room-upper.shape-wide .content, .cap-room-upper.shape-square .content { padding-top: 25cqh; }
 `;

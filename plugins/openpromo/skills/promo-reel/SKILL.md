@@ -20,6 +20,7 @@ description: Make a 15–40 second vertical promo reel for Instagram Reels, TikT
    - every scene's narration says the on-screen point in other words, and sounds natural read aloud;
    - the last scene asks for one action.
 3. **Fix.** Act on the `checks`. A scene that is too short for its voiceover is stretched at render time, but shorter narration is usually better.
+   Captions: the writer picks a look from the brand's voice. To change it, update `spec.captionStyle.preset` (`bold-pop`, `box-highlight`, `karaoke-pill`, `karaoke-pill-dark`, `word-slam`, `minimal`, `word-reveal`). `spec.scenes[].emphasis` lists the words shown in the highlight colour.
 4. **Price.** Count it before rendering: voiceover about $0.01 per scene, music $0.08 unless reused, AI pictures $0.04–0.20 each, AI clips about $0.11 a second. Get a yes.
 5. **Render.** `render_creation`; poll `get_render` (a 30-second reel takes one to three minutes). It produces the MP4, a thumbnail and an SRT caption file.
 6. **Post.** Give the caption, and suggest uploading the SRT too where the platform takes it.

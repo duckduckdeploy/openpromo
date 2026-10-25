@@ -2,6 +2,7 @@ import type { MetadataRoute } from 'next';
 import { comparisons } from '@/content/compare';
 import { docPages } from '@/content/docs';
 import { features } from '@/content/features';
+import { glossary, glossaryCategories } from '@/content/glossary';
 import { videoPage } from '@/content/video-generator';
 import { SITE_URL } from '@/lib/site';
 
@@ -18,6 +19,9 @@ export default function sitemap(): MetadataRoute.Sitemap {
     { path: '/pricing', priority: 0.8 },
     { path: '/docs', priority: 0.7 },
     ...docPages.map((doc) => ({ path: `/docs/${doc.slug}`, priority: 0.6 })),
+    { path: '/glossary', priority: 0.7 },
+    ...glossaryCategories.map((category) => ({ path: `/glossary/topics/${category.id}`, priority: 0.5 })),
+    ...glossary.map((term) => ({ path: `/glossary/${term.slug}`, priority: 0.5 })),
   ];
 
   return paths.map(({ path, priority }) => ({ url: `${SITE_URL}${path === '/' ? '' : path}`, changeFrequency: 'weekly', priority }));

@@ -1,8 +1,11 @@
 "use client";
 
 import {
-  CAPTION_STYLES,
+  CAPTION_PRESET_KEYS,
+  CAPTION_PRESETS,
+  type CaptionPreset,
   CREATION_TYPES,
+  creationSpec,
   type CreationSpec,
   MEDIA_FORMATS,
   type MediaFormat,
@@ -128,6 +131,7 @@ function newScene(isVideo: boolean): Scene {
     narration: "",
     transition: "fade",
     pointIds: [],
+    emphasis: [],
   };
 }
 
@@ -147,7 +151,8 @@ export default function CreationEditor() {
   useEffect(() => {
     if (creation.data && loadedFor.current !== creation.data.id) {
       loadedFor.current = creation.data.id;
-      setSpec(structuredClone(creation.data.spec));
+      // Parsed so creations saved before a field existed get its default.
+      setSpec(creationSpec.parse(structuredClone(creation.data.spec)));
       setMeta({ title: creation.data.title, caption: creation.data.caption });
     }
   }, [creation.data]);
@@ -188,6 +193,8 @@ export default function CreationEditor() {
   const c = creation.data;
   const type = CREATION_TYPES[c.type];
   const isVideo = type.video;
+  const captionsOn = spec.captions !== "none";
+  const captionValue = spec.captions === "none" ? "none" : spec.captions === "line" ? "minimal" : spec.captionStyle.preset;
   const scene = spec.scenes[Math.min(selected, spec.scenes.length - 1)]!;
   const index = spec.scenes.indexOf(scene);
   const busy = c.renders.some((r) => r.status === "queued" || r.status === "running");
@@ -415,6 +422,15 @@ export default function CreationEditor() {
                   <Field label="Voiceover" hint="The scene lasts at least as long as this takes to say.">
                     <Textarea value={scene.narration} onChange={(e) => updateScene((s) => void (s.narration = e.target.value))} rows={3} />
                   </Field>
+                  {spec.captions !== "none" && (
+                    <Field label="Caption keywords" hint="Words from the voiceover the captions show in colour, separated by commas. Numbers are always highlighted.">
+                      <Input
+                        value={scene.emphasis.join(", ")}
+                        onChange={(e) => updateScene((s) => void (s.emphasis = e.target.value.split(",").map((w) => w.trim()).filter(Boolean).slice(0, 4)))}
+                        placeholder="sourdough, Saturday"
+                      />
+                    </Field>
+                  )}
                 </>
               )}
             </div>
@@ -441,15 +457,56 @@ export default function CreationEditor() {
                   <Field label={`Music volume (${Math.round(spec.audio.music.volume * 100)}%)`}>
                     <input type="range" min={0} max={60} value={Math.round(spec.audio.music.volume * 100)} onChange={(e) => update((d) => void (d.audio.music.volume = Number(e.target.value) / 100))} className="w-full accent-[var(--color-accent)]" />
                   </Field>
-                  <Field label="Captions">
-                    <Select value={spec.captions} onChange={(e) => update((d) => void (d.captions = e.target.value as CreationSpec["captions"]))}>
-                      {CAPTION_STYLES.map((s) => (
-                        <option key={s} value={s}>
-                          {s === "word" ? "Word by word" : s === "line" ? "Whole lines" : "None"}
+                  <Field label="Captions" hint={captionsOn ? CAPTION_PRESETS[captionValue as CaptionPreset].description : "No captions burned in. Most people watch without sound, so captions are worth it."}>
+                    <Select
+                      value={captionValue}
+                      onChange={(e) =>
+                        update((d) => {
+                          if (e.target.value === "none") d.captions = "none";
+                          else {
+                            d.captions = "word";
+                            d.captionStyle.preset = e.target.value as CaptionPreset;
+                          }
+                        })
+                      }
+                    >
+                      {CAPTION_PRESET_KEYS.map((key) => (
+                        <option key={key} value={key}>
+                          {CAPTION_PRESETS[key].label}
                         </option>
                       ))}
+                      <option value="none">No captions</option>
                     </Select>
                   </Field>
+                  {captionsOn && (
+                    <div className="grid grid-cols-[1fr_auto] items-end gap-3">
+                      <Field label="Caption position">
+                        <Select value={spec.captionStyle.position} onChange={(e) => update((d) => void (d.captionStyle.position = e.target.value as "lower" | "upper"))}>
+                          <option value="lower">Lower, above the app&apos;s buttons</option>
+                          <option value="upper">Upper, below the top bar</option>
+                        </Select>
+                      </Field>
+                      <Field label="Highlight">
+                        <div className="flex items-center gap-1.5">
+                          <label className="relative block size-9 cursor-pointer overflow-hidden rounded-md border border-line" title="Highlight colour">
+                            <span className="absolute inset-0" style={{ background: spec.captionStyle.accent ?? "conic-gradient(#ffe500, #3ce65a, #ffe500)" }} />
+                            <input
+                              type="color"
+                              value={spec.captionStyle.accent ?? "#ffe500"}
+                              onChange={(e) => update((d) => void (d.captionStyle.accent = e.target.value))}
+                              className="absolute inset-0 cursor-pointer opacity-0"
+                              aria-label="Caption highlight colour"
+                            />
+                          </label>
+                          {spec.captionStyle.accent && (
+                            <button type="button" onClick={() => update((d) => void (d.captionStyle.accent = null))} className="text-xs text-muted hover:text-ink">
+                              Reset
+                            </button>
+                          )}
+                        </div>
+                      </Field>
+                    </div>
+                  )}
                 </>
               )}
               <Field label="Post caption" hint="Copy this when you post.">

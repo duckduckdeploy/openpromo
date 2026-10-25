@@ -70,10 +70,34 @@ export const scene = z.object({
   transition: z.enum(["cut", "fade", "slide", "zoom"]).default("fade"),
   /** Selling points (brand.positioning.points ids) this scene claims; grounding checks them. */
   pointIds: z.array(z.string()).default([]),
+  /** Video only: words from the narration that captions show in the accent colour. */
+  emphasis: z.array(z.string().max(40)).max(4).default([]),
 });
 export type Scene = z.infer<typeof scene>;
 
 export const CAPTION_STYLES = ["word", "line", "none"] as const;
+
+/** How burned-in captions look. The recipes are in @openpromo/render (caption-styles.ts). */
+export const CAPTION_PRESETS = {
+  "bold-pop": { label: "Bold pop", description: "Big uppercase words with a thick outline; each word pops as it is spoken." },
+  "box-highlight": { label: "Box highlight", description: "A colored box slides behind each word as it is spoken." },
+  "karaoke-pill": { label: "Karaoke, light", description: "A light pill; words fill in dark as they are spoken." },
+  "karaoke-pill-dark": { label: "Karaoke, dark", description: "A dark pill; words light up as they are spoken." },
+  "word-slam": { label: "One word at a time", description: "One huge word at a time, slamming in from alternating sides." },
+  minimal: { label: "Minimal", description: "Clean sentence-case lines with a soft shadow, for calm or corporate videos." },
+  "word-reveal": { label: "Word reveal", description: "Words appear one by one as they are spoken and the line builds up." },
+} as const;
+export type CaptionPreset = keyof typeof CAPTION_PRESETS;
+export const CAPTION_PRESET_KEYS = Object.keys(CAPTION_PRESETS) as [CaptionPreset, ...CaptionPreset[]];
+
+export const captionStyle = z.object({
+  preset: z.enum(CAPTION_PRESET_KEYS).default("bold-pop"),
+  /** Lower sits just above the platform buttons and text on 9:16; upper sits below the top bar. */
+  position: z.enum(["lower", "upper"]).default("lower"),
+  /** Highlight colour; each preset has its own default. */
+  accent: z.string().regex(/^#[0-9a-f]{6}$/i).nullable().default(null),
+});
+export type CaptionStyle = z.infer<typeof captionStyle>;
 
 export const creationSpec = z.object({
   version: z.literal(1).default(1),
@@ -107,6 +131,7 @@ export const creationSpec = z.object({
       music: { assetId: null, prompt: "", volume: 0.18 },
     }),
   captions: z.enum(CAPTION_STYLES).default("word"),
+  captionStyle: captionStyle.default({ preset: "bold-pop", position: "lower", accent: null }),
   /** The scene whose first frame becomes the poster and thumbnail. */
   posterSceneId: z.string().nullable().default(null),
 });

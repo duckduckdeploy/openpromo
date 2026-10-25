@@ -7,6 +7,7 @@ import { ButtonLink } from '@/components/button';
 import { CtaBand } from '@/components/cta-band';
 import { ExampleGallery } from '@/components/example-gallery';
 import { FaqList } from '@/components/faq';
+import { RelatedTerms } from '@/components/related-terms';
 import { JsonLd } from '@/components/json-ld';
 import { PriceTable } from '@/components/price-table';
 import { StatusNote } from '@/components/section';
@@ -217,6 +218,10 @@ export default async function FeaturePage({ params }: FeaturePageProps) {
               </div>
             </div>
           </div>
+        </section>
+
+        <section className="container-page pt-20 md:pt-28">
+          <RelatedTerms slugs={feature.terms} title="Terms to know" id="glossary-title" />
         </section>
 
         {/* Related features and the setup guide */}

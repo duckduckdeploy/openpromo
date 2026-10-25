@@ -22,6 +22,7 @@ function sectionOf(path: string): string {
       docs: 'Docs',
       compare: 'Comparison',
       pricing: 'Pricing',
+      glossary: 'Glossary',
     }[first] ?? ''
   );
 }

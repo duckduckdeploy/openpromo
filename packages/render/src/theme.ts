@@ -54,8 +54,9 @@ function fontStack(family: string): string {
 }
 
 /** Google Fonts stylesheet for the brand's families (and the fallbacks), or null when none load from Google. */
-export function googleFontsHref(brand: BrandProfile): string {
+export function googleFontsHref(brand: BrandProfile, extra: Array<{ family: string; weights: number[] }> = []): string {
   const families = new Map<string, number[]>();
+  for (const font of extra) families.set(font.family, [...new Set([...(families.get(font.family) ?? []), ...font.weights])].sort((a, b) => a - b));
   for (const font of [brand.visual.fonts.heading, brand.visual.fonts.body]) {
     if (!font.google) continue;
     const weights = new Set([...(families.get(font.family) ?? []), ...font.weights, 400, 700]);

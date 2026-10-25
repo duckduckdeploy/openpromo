@@ -1,0 +1,36 @@
+import Link from 'next/link';
+import { getTerm } from '@/content/glossary';
+
+interface RelatedTermsProps {
+  slugs: string[];
+  title?: string;
+  id?: string;
+  align?: 'left' | 'center';
+}
+
+/** Links into the glossary. Slugs without an entry are skipped. */
+export function RelatedTerms({ slugs, title = 'Related terms', id = 'terms-title', align = 'center' }: RelatedTermsProps) {
+  const terms = slugs.map(getTerm).filter((term) => term !== undefined);
+  if (terms.length === 0) return null;
+  const centered = align === 'center';
+
+  return (
+    <section aria-labelledby={id} className={centered ? 'mx-auto max-w-5xl' : undefined}>
+      <h2 id={id} className={`text-title ${centered ? 'text-center' : ''}`}>
+        {title}
+      </h2>
+      <ul className={`mt-10 grid grid-cols-1 gap-4 sm:grid-cols-2 ${centered ? 'lg:grid-cols-3' : ''}`}>
+        {terms.map((term) => (
+          <li key={term.slug} className="card card-link group block p-5">
+            <p className="font-semibold">
+              <Link href={`/glossary/${term.slug}`} className="after:absolute after:inset-0 group-hover:text-accent-text focus-visible:outline-none">
+                {term.term}
+              </Link>
+            </p>
+            <p className="mt-2 text-[0.9375rem] leading-relaxed text-muted">{term.short}</p>
+          </li>
+        ))}
+      </ul>
+    </section>
+  );
+}

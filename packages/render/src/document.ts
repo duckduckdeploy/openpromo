@@ -1,5 +1,6 @@
 import { MEDIA_FORMATS, type BrandProfile, type CreationSpec, type MediaFormat } from "@openpromo/shared";
-import { esc, lookOf, SCENE_CSS, sceneHtml, type SceneContext } from "./layouts";
+import { captionLayer, captionPreset } from "./caption-styles";
+import { esc, lookOf, SCENE_CSS, sceneHtml, shapeOf, type SceneContext } from "./layouts";
 import { googleFontsHref, themeCss } from "./theme";
 
 /**
@@ -56,6 +57,21 @@ const FIT_SCRIPT = `
       s.style.display = display;
     }
     style.remove();
+    // Captions: shrink until every cue fits its width and line limit.
+    var caps = document.querySelectorAll(".caption");
+    for (var k = 0; k < caps.length; k++) {
+      var c = caps[k], cap = c.querySelector(".cap"), cv = c.style.visibility;
+      if (!cap) continue;
+      c.style.visibility = "visible";
+      var maxLines = Number(c.getAttribute("data-max-lines") || 2), g = 1;
+      var lines = function () {
+        var tops = {}, n = 0, ws = cap.querySelectorAll(".w");
+        for (var m = 0; m < ws.length; m++) { var top = Math.round(ws[m].offsetTop / 4); if (!tops[top]) { tops[top] = 1; n++; } }
+        return n;
+      };
+      while ((cap.scrollWidth > c.clientWidth + 2 || cap.offsetHeight > c.clientHeight + 2 || lines() > maxLines) && g > 0.5) { g = Math.round((g - 0.05) * 100) / 100; cap.style.setProperty("--cfit", String(g)); }
+      c.style.visibility = cv;
+    }
     window.__openpromoReady = true;
   }
   var images = Array.prototype.slice.call(document.images).map(function (img) { return img.complete ? Promise.resolve() : new Promise(function (r) { img.onload = img.onerror = r; }); });
@@ -73,9 +89,9 @@ function context(input: DocumentInput, mode: "image" | "video"): SceneContext {
   };
 }
 
-function head(input: DocumentInput, extraCss = "", extraHead = ""): string {
+function head(input: DocumentInput, extraCss = "", extraHead = "", extraFonts: Array<{ family: string; weights: number[] }> = []): string {
   const { width, height } = MEDIA_FORMATS[input.format];
-  const fonts = input.offlineFonts ? "" : `<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link rel="stylesheet" href="${esc(googleFontsHref(input.brand))}">`;
+  const fonts = input.offlineFonts ? "" : `<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link rel="stylesheet" href="${esc(googleFontsHref(input.brand, extraFonts))}">`;
   return `<meta charset="utf-8"><meta name="viewport" content="width=${width}, height=${height}">${extraHead}${fonts}
 <style>${themeCss(input.brand, input.spec.colors)}
 :root { --w: ${width}px; --h: ${height}px; }
@@ -89,7 +105,7 @@ export function imageDocument(input: DocumentInput, sceneIndex = 0): string {
 }
 
 export type VoiceClip = { path: string; startMs: number; durationMs: number };
-export type CaptionCue = { startMs: number; endMs: number; words: Array<{ text: string; startMs: number; endMs: number }> };
+export type CaptionCue = { startMs: number; endMs: number; words: Array<{ text: string; startMs: number; endMs: number; kw?: boolean }> };
 
 export type VideoInput = DocumentInput & {
   /** Voiceover, one clip per scene (or per sentence), already placed on the timeline. */
@@ -114,6 +130,8 @@ export function videoDocument(input: VideoInput): string {
   const total = input.sceneStarts.reduce((end, start, i) => Math.max(end, start + (input.sceneDurations[i] ?? 0)), 0);
   const clips: string[] = [];
   const tl: string[] = [];
+  // Scene text keeps out of the caption band and, on 9:16, out of the platforms' own buttons and text.
+  const reserve = input.captions.length ? `cap-room-${input.spec.captionStyle?.position ?? "lower"}` : shapeOf(input.format) === "tall" ? "ui-room" : "";
 
   input.spec.scenes.forEach((scene, i) => {
     const start = input.sceneStarts[i] ?? 0;
@@ -130,7 +148,7 @@ export function videoDocument(input: VideoInput): string {
       // A slow push-in keeps stills alive (a "Ken Burns" move); clips move on their own.
       if (!bg.video) tl.push(`tl.fromTo("#${id}", { scale: 1 }, { scale: 1.08, duration: ${secs(duration)}, ease: "none" }, ${secs(start)});`);
     }
-    clips.push(sceneHtml(ctx, scene, ` id="scene-${i}" ${timing} data-track-index="1"`, "clip"));
+    clips.push(sceneHtml(ctx, scene, ` id="scene-${i}" ${timing} data-track-index="1"`, `clip ${reserve}`));
     const t0 = start / 1000;
     const entrance =
       scene.transition === "slide"
@@ -145,14 +163,19 @@ export function videoDocument(input: VideoInput): string {
     tl.push(`tl.from("#scene-${i} .in", { opacity: 0.2, y: ${Math.round(Math.min(width, height) * 0.04)}, duration: 0.5, ease: "power3.out", stagger: 0.12 }, ${(t0 + 0.12).toFixed(3)});`);
   });
 
-  input.captions.forEach((cue, i) => {
-    const words = cue.words.map((w, j) => `<span class="w" id="c${i}w${j}">${esc(w.text)}</span>`).join("");
-    clips.push(`<div id="cap-${i}" class="clip caption" data-start="${secs(cue.startMs)}" data-duration="${secs(Math.max(80, cue.endMs - cue.startMs))}" data-track-index="3"><div class="caption-box">${words}</div></div>`);
-    cue.words.forEach((w, j) => {
-      tl.push(`tl.set("#c${i}w${j}", { color: "var(--caption-hi, #ffd84d)", scale: 1.06 }, ${(w.startMs / 1000).toFixed(3)});`);
-      tl.push(`tl.set("#c${i}w${j}", { color: "#ffffff", scale: 1 }, ${(Math.max(w.startMs + 40, w.endMs) / 1000).toFixed(3)});`);
-    });
+  const preset = captionPreset(input.spec.captions, input.spec.captionStyle);
+  const captions = captionLayer({
+    cues: input.captions,
+    preset,
+    style: input.spec.captionStyle,
+    format: input.format,
+    primary: input.spec.colors?.primary ?? input.brand.visual.colors.primary,
+    width,
+    height,
+    track: 3,
   });
+  clips.push(...captions.clips);
+  tl.push(...captions.steps);
 
   input.voice.forEach((clip, i) => {
     clips.push(`<audio id="vo-${i}" data-start="${secs(clip.startMs)}" data-duration="${secs(clip.durationMs)}" data-track-index="4" data-volume="1" src="${esc(clip.path)}"></audio>`);
@@ -166,9 +189,10 @@ export function videoDocument(input: VideoInput): string {
     }
   }
 
-  const css = `.clip { visibility: hidden; } .scene.look-photo { background: transparent; } .backdrop.clip { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }`;
+  const css = `.clip { visibility: hidden; } .scene.look-photo { background: transparent; } .backdrop.clip { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+${input.captions.length ? captions.css : ""}`;
   const meta = `<meta data-composition-id="openpromo" data-width="${width}" data-height="${height}"><script src="gsap.min.js"></script>`;
-  return `<!doctype html><html lang="en"><head>${head(input, css, meta)}</head><body><div id="stage">
+  return `<!doctype html><html lang="en"><head>${head(input, css, meta, input.captions.length && captions.font ? [captions.font] : [])}</head><body><div id="stage">
 ${clips.join("\n")}
 </div>
 <script>${FIT_SCRIPT}</script>

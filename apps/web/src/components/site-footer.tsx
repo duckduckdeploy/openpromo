@@ -62,6 +62,11 @@ export function SiteFooter() {
                 All docs
               </Link>
             </li>
+            <li>
+              <Link href="/glossary" className={linkClass}>
+                Marketing glossary
+              </Link>
+            </li>
           </ul>
           <h2 className="mt-9 mb-5 text-sm font-semibold text-ink">Compare</h2>
           <ul className="space-y-3">

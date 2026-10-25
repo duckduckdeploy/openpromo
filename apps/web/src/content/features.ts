@@ -53,6 +53,8 @@ export interface Feature {
   examples: string[];
   examplesTitle: string;
   examplesNote: string;
+  /** Glossary terms (slugs) linked at the foot of the page. */
+  terms: string[];
   /** H2 of the "how it works" section, keyword-led. */
   howTitle: string;
   steps: FeatureStep[];
@@ -85,6 +87,7 @@ export const PRICES = {
 export const features: Feature[] = [
   {
     slug: 'brand-kit-generator',
+    terms: ['brand-kit', 'brand-guidelines', 'brand-voice', 'color-palette', 'typography', 'brand-consistency'],
     screen: 'brandProfile',
     name: 'Brand kit generator',
     seoTitle: 'Brand Kit Generator: Your Brand DNA from a URL',
@@ -163,6 +166,7 @@ export const features: Feature[] = [
   },
   {
     slug: 'instagram-post-generator',
+    terms: ['content-pillars', 'caption', 'hashtag', 'instagram-post-size', 'engagement-rate', 'content-calendar'],
     screen: 'carouselEditor',
     name: 'Instagram post generator',
     seoTitle: 'Instagram Post Generator That Knows Your Brand',
@@ -219,6 +223,7 @@ export const features: Feature[] = [
   },
   {
     slug: 'carousel-maker',
+    terms: ['carousel-post', 'instagram-post-size', 'hook', 'call-to-action', 'content-repurposing', 'engagement'],
     screen: 'carouselEditor',
     name: 'Carousel maker',
     seoTitle: 'Carousel Maker for Instagram and LinkedIn',
@@ -271,6 +276,7 @@ export const features: Feature[] = [
   },
   {
     slug: 'banner-maker',
+    terms: ['banner-ad', 'social-media-image-sizes', 'linkedin-banner-size', 'twitter-header-size', 'open-graph-image', 'safe-zone'],
     screen: 'mediaLibrary',
     name: 'Banner maker',
     seoTitle: 'Banner Maker: Ad, X and LinkedIn Banners',
@@ -317,6 +323,7 @@ export const features: Feature[] = [
   },
   {
     slug: 'ai-reel-generator',
+    terms: ['instagram-reels', 'hook', 'animated-captions', 'voiceover', 'vertical-video', 'trending-audio'],
     screen: 'reelEditor',
     name: 'AI reel generator',
     seoTitle: 'AI Reel Generator for Reels, TikTok and Shorts',
@@ -341,7 +348,7 @@ export const features: Feature[] = [
     capabilities: [
       { title: 'Hook in two seconds', body: 'The first scene is written to stop the scroll, and the check warns when it is missing.' },
       { title: 'AI voiceover and music', body: 'A natural voice reads the script over a music bed. Turn either off.' },
-      { title: 'Word-by-word captions', body: 'Captions follow the voice word by word, and an SRT file comes with every render.' },
+      { title: 'Seven caption styles', body: 'Captions follow the voice word by word in the look you pick: bold pop, box highlight, karaoke, one word at a time, minimal or word reveal. They sit clear of the TikTok, Reels and Shorts buttons, and an SRT file comes with every render.' },
       { title: 'YouTube Shorts maker too', body: 'The same 9:16 file works for Reels, TikTok and Shorts.' },
       { title: 'Poster thumbnail', body: 'A poster frame is made for each reel, so the cover in the grid looks right.' },
       { title: 'Optional B-roll', body: 'AI pictures and short clips can fill scenes when your own pictures do not fit.' },
@@ -378,6 +385,7 @@ export const features: Feature[] = [
   },
   {
     slug: 'url-to-video',
+    terms: ['promo-video', 'explainer-video', 'text-to-video', 'b-roll', 'voiceover', 'aspect-ratio'],
     screen: 'reelEditor',
     name: 'URL to video',
     seoTitle: 'URL to Video: Promo Videos from Your Website',
@@ -431,6 +439,7 @@ export const features: Feature[] = [
   },
   {
     slug: 'product-demo-video-maker',
+    terms: ['product-demo-video', 'tutorial-video', 'screen-recording', 'lower-third', 'open-captions', 'video-script'],
     screen: 'reelEditor',
     name: 'Product demo video maker',
     seoTitle: 'Product Demo Video Maker with AI Voiceover',
@@ -478,6 +487,7 @@ export const features: Feature[] = [
   },
   {
     slug: 'instagram-caption-generator',
+    terms: ['caption', 'hashtag', 'call-to-action', 'brand-voice', 'copywriting', 'ai-copywriting'],
     screen: 'postIdeas',
     name: 'Instagram caption generator',
     seoTitle: 'Instagram Caption Generator and Post Ideas',

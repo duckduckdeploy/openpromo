@@ -54,3 +54,31 @@ export async function videoSize(file: string): Promise<{ width: number; height: 
   const match = report.match(/Video:.*?, (\d{2,5})x(\d{2,5})/);
   return match ? { width: Number(match[1]), height: Number(match[2]) } : null;
 }
+
+/**
+ * Where a voice clip is speaking, in ms from its start, from ffmpeg's silencedetect. Captions pin
+ * phrases to these stretches. Pauses shorter than 90 ms are breaths inside a phrase and are ignored.
+ */
+export async function voicedSpans(file: string, durationMs: number): Promise<Array<{ startMs: number; endMs: number }>> {
+  const report = await ffmpeg(["-i", file, "-af", "silencedetect=noise=-38dB:d=0.09", "-f", "null", "-"]).catch(() => null);
+  if (!report) return [];
+  const silences: Array<[number, number]> = [];
+  let open: number | null = null;
+  for (const match of report.matchAll(/silence_(start|end): (-?\d+(?:\.\d+)?)/g)) {
+    const ms = Math.max(0, Math.round(Number(match[2]) * 1000));
+    if (match[1] === "start") open = ms;
+    else if (open !== null) {
+      silences.push([open, ms]);
+      open = null;
+    }
+  }
+  if (open !== null) silences.push([open, durationMs]);
+  const spans: Array<{ startMs: number; endMs: number }> = [];
+  let at = 0;
+  for (const [start, end] of silences) {
+    if (start - at >= 60) spans.push({ startMs: at, endMs: start });
+    at = Math.max(at, end);
+  }
+  if (durationMs - at >= 60) spans.push({ startMs: at, endMs: durationMs });
+  return spans;
+}

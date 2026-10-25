@@ -71,7 +71,7 @@ Open source and self-hostable. Bring your own [YepAPI](https://yepapi.com?ref=op
   </tr>
   <tr>
     <td>🎬 Reels</td>
-    <td>9:16 videos for Reels, TikTok and Shorts: a hook in the first two seconds, voiceover, a music bed, word-by-word captions, a thumbnail and an SRT file</td>
+    <td>9:16 videos for Reels, TikTok and Shorts: a hook in the first two seconds, voiceover, a music bed, word-by-word captions in seven styles (kept clear of the app buttons), a thumbnail and an SRT file</td>
   </tr>
   <tr>
     <td>📽️ Promo videos</td>
