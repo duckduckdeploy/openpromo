@@ -7,7 +7,7 @@ import { CREATION_TYPES, MEDIA_FORMATS, type BrandProfile, type CreationSpec, ty
 import { nearestAspectRatio } from "@openpromo/yepapi";
 import { eq, inArray } from "drizzle-orm";
 import { dataDb, schema } from "../../db";
-import { absolutePath, mediaRoot, saveAsset, type Asset } from "../../lib/media-store";
+import { localFile, mediaRoot, saveAsset, type Asset } from "../../lib/media-store";
 import { errorMessage } from "../../lib/yep";
 import { withPage } from "../browser";
 import { generateAsset } from "../media";
@@ -153,15 +153,12 @@ async function renderFolder(renderId: string, projectId: string, ids: string[]):
     const name = `assets/${row.id}${path.extname(row.path)}`;
     // A file that has gone (deleted by hand, a moved media folder) leaves its scene without that
     // picture rather than failing the whole render.
-    const copied = await copyFile(absolutePath(row.path), path.join(dir, name)).then(
-      () => true,
-      (error: NodeJS.ErrnoException) => {
-        if (error.code !== "ENOENT") throw error;
-        console.warn(`render ${renderId}: asset ${row.id} has no file (${row.path}); left out`);
-        return false;
-      },
-    );
-    if (!copied) continue;
+    const source = await localFile(row);
+    if (!source) {
+      console.warn(`render ${renderId}: asset ${row.id} has no file (${row.path}); left out`);
+      continue;
+    }
+    await copyFile(source, path.join(dir, name));
     files[row.id] = { path: name, video: row.kind === "video" };
     byId.set(row.id, row);
   }

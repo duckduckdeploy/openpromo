@@ -8,7 +8,8 @@ import { dataDb, schema } from "../db";
 import type { AssetRole } from "../db/data-schema";
 import { requireProject, requireUser } from "../lib/context";
 import { badRequest, notFound, parse, uuidParam } from "../lib/errors";
-import { absolutePath, deleteAsset, saveAsset } from "../lib/media-store";
+import { deleteAsset, localFile, saveAsset } from "../lib/media-store";
+import { publicUrl } from "../lib/object-storage";
 
 const UPLOAD_ROLES = ["logo", "product", "photo", "screenshot", "background", "broll", "music", "voice"] as const satisfies readonly AssetRole[];
 const UPLOAD_TYPES = /^(image\/(png|jpeg|webp|svg\+xml|gif)|video\/(mp4|webm)|audio\/(mpeg|wav|mp4))$/;
@@ -51,14 +52,17 @@ export async function assetRoutes(app: FastifyInstance) {
     return { ok: true, data: rows };
   });
 
-  // The file itself. Range requests are answered so videos can seek in the browser.
+  // The file itself. With a CDN (MEDIA_PUBLIC_URL), viewing redirects there; downloads, and installs
+  // without one, stream from this server. Range requests are answered so videos can seek.
   app.get<{ Params: { assetId: string } }>("/assets/:assetId/file", async (request, reply) => {
     const user = await requireUser(request);
     const asset = await requireAsset(user.id, request.params.assetId);
-    const file = absolutePath(asset.path);
-    const size = (await stat(file).catch(() => null))?.size;
-    if (size == null) throw notFound("File");
     const download = (request.query as { download?: string }).download === "1";
+    const cdn = download ? null : publicUrl(asset.path);
+    if (cdn) return reply.header("cache-control", "private, max-age=3600").redirect(cdn, 302);
+    const file = await localFile(asset);
+    const size = file ? (await stat(file).catch(() => null))?.size : null;
+    if (!file || size == null) throw notFound("File");
     reply.header("content-type", asset.mime);
     reply.header("accept-ranges", "bytes");
     // Files never change once written: a new version is a new asset.

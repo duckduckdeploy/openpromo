@@ -7,6 +7,7 @@ import { dataDb, schema } from "../db";
 import { dispatch } from "../jobs/dispatch";
 import { requireProject, requireUser } from "../lib/context";
 import { badRequest, conflict, notFound, parse, uuidParam } from "../lib/errors";
+import { env } from "../env";
 import { getYep } from "../lib/yep";
 import { writeCreation, writeIdeas, type AssetSummary } from "../services/writer";
 
@@ -231,7 +232,8 @@ export async function creationRoutes(app: FastifyInstance) {
     const files = Object.fromEntries(rows.map((r) => [r.id, { path: `/api/assets/${r.id}/file`, video: r.kind === "video" }]));
     const html = imageDocument({ brand, spec: creation.spec, format: query.format ?? creation.format, assets: { files } }, query.scene);
     // The preview runs no script of ours beyond the text fit; it must never reach other origins.
-    reply.header("content-security-policy", "default-src 'none'; img-src 'self' data:; media-src 'self'; style-src 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; script-src 'unsafe-inline'; frame-ancestors 'self'");
+    const cdn = env.MEDIA_PUBLIC_URL ? ` ${new URL(env.MEDIA_PUBLIC_URL).origin}` : "";
+    reply.header("content-security-policy", `default-src 'none'; img-src 'self' data:${cdn}; media-src 'self'${cdn}; style-src 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; script-src 'unsafe-inline'; frame-ancestors 'self'`);
     return reply.type("text/html; charset=utf-8").send(html);
   });
 

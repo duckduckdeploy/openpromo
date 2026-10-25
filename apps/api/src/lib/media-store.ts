@@ -7,10 +7,13 @@ import { dataDb, schema } from "../db";
 import type { AssetKind, AssetRole, AssetSource } from "../db/data-schema";
 import { env } from "../env";
 import { mediaDurationMs, videoSize } from "./ffmpeg";
+import { deleteObject, getObject, listObjects, objectStorageEnabled, putObject } from "./object-storage";
 
 /**
  * Files live on disk under MEDIA_DIR, one folder per project: "<projectId>/<assetId>.<ext>".
  * The assets table holds what each file is. Paths in rows are relative, so the folder can move.
+ * With object storage configured (lib/object-storage.ts), every file is also uploaded under the
+ * same key; the bucket is the copy that counts and the disk is a cache that refills on demand.
  */
 
 export const mediaRoot = () => path.resolve(env.MEDIA_DIR);
@@ -112,6 +115,8 @@ export async function saveAsset(input: NewAsset) {
     if (kind === "video") ({ width, height } = (await videoSize(full)) ?? { width: null, height: null });
   }
 
+  if (objectStorageEnabled()) await putObject(relative, bytes, mime);
+
   const [row] = await dataDb
     .insert(schema.assets)
     .values({
@@ -139,26 +144,42 @@ export async function saveAsset(input: NewAsset) {
 
 export type Asset = typeof schema.assets.$inferSelect;
 
+/**
+ * The file on local disk, fetched from object storage first when this server has no copy (a new
+ * server, a cleaned cache). Returns null when the file exists nowhere.
+ */
+export async function localFile(asset: Pick<Asset, "path">): Promise<string | null> {
+  const full = absolutePath(asset.path);
+  if (await stat(full).then(() => true, () => false)) return full;
+  if (!objectStorageEnabled()) return null;
+  const bytes = await getObject(asset.path);
+  if (!bytes) return null;
+  await mkdir(path.dirname(full), { recursive: true });
+  await writeFile(full, bytes);
+  return full;
+}
+
 export async function readAsset(asset: Pick<Asset, "path">): Promise<Buffer> {
-  return readFile(absolutePath(asset.path));
+  const file = await localFile(asset);
+  if (!file) throw new Error(`The file for this asset is missing (${asset.path})`);
+  return readFile(file);
 }
 
 export async function assetExists(asset: Pick<Asset, "path">): Promise<boolean> {
-  return stat(absolutePath(asset.path)).then(
-    () => true,
-    () => false,
-  );
+  return (await localFile(asset)) !== null;
 }
 
 export async function deleteAsset(asset: Pick<Asset, "id" | "path">): Promise<void> {
   await dataDb.delete(schema.assets).where(eq(schema.assets.id, asset.id));
   await rm(absolutePath(asset.path), { force: true });
+  if (objectStorageEnabled()) await deleteObject(asset.path);
 }
 
 /** Removes a project's whole folder (after its rows are gone with the project). */
 export async function deleteProjectFiles(projectId: string): Promise<void> {
   if (!/^[0-9a-f-]{36}$/i.test(projectId)) return;
   await rm(absolutePath(projectId), { recursive: true, force: true });
+  if (objectStorageEnabled()) for (const key of await listObjects(`${projectId}/`)) await deleteObject(key);
 }
 
 /**

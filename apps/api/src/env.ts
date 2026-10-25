@@ -39,6 +39,16 @@ const schema = z.object({
   // Lets the website reader open private and local addresses (an intranet site, or tests). Off by
   // default: anyone who can add a project could otherwise make the server fetch internal services.
   INGEST_ALLOW_PRIVATE_NETWORK: z.enum(["true", "false"]).default("false"),
+  // Optional S3-compatible object storage for media (Cloudflare R2, AWS S3, MinIO). Unset: local
+  // disk only. R2: S3_ENDPOINT=https://<account id>.r2.cloudflarestorage.com, S3_REGION=auto.
+  S3_ENDPOINT: z.string().url().optional(),
+  S3_BUCKET: z.string().min(1).optional(),
+  S3_ACCESS_KEY_ID: z.string().min(1).optional(),
+  S3_SECRET_ACCESS_KEY: z.string().min(1).optional(),
+  S3_REGION: z.string().min(1).default("auto"),
+  // Where the bucket is served publicly (a CDN domain such as https://cdn.example.com). Set: the
+  // app and agents get media from there instead of through the API.
+  MEDIA_PUBLIC_URL: z.string().url().optional(),
   // Pages read when building a brand profile.
   INGEST_MAX_PAGES: z.coerce.number().int().min(1).max(50).default(8),
 });
