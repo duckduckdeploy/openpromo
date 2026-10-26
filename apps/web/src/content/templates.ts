@@ -83,6 +83,14 @@ export type TemplateKind = (typeof templateKinds)[number]['id'];
 
 export const kindOf = (t: PromoTemplate): TemplateKind => templateKinds.find((k) => (k.types as readonly string[]).includes(t.type))!.id;
 export const templatesOfKind = (kind: TemplateKind) => TEMPLATES.filter((t) => kindOf(t) === kind);
+/** A kind's templates with finished examples first, for short lists. */
+export const showcaseOfKind = (kind: TemplateKind) => [...templatesOfKind(kind)].sort((a, b) => Number(!previewOf(a)) - Number(!previewOf(b)));
+/** How each kind's grid looks: the frame every card shares and how many fit across. */
+export const kindLayout: Record<TemplateKind, { format: string; aspect: string; grid: string; shown: number }> = {
+  images: { format: 'square', aspect: 'aspect-square', grid: 'grid-cols-2 md:grid-cols-3 lg:grid-cols-4', shown: 8 },
+  reels: { format: 'story', aspect: 'aspect-[9/16]', grid: 'grid-cols-2 md:grid-cols-3 lg:grid-cols-4', shown: 8 },
+  videos: { format: 'landscape', aspect: 'aspect-video', grid: 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3', shown: 6 },
+};
 export const getTemplateById = (id: string) => TEMPLATES.find((t) => t.id === id);
 export const previewOf = (t: PromoTemplate) => TEMPLATE_PREVIEWS[t.id]?.[0];
 export const isVideoTemplate = (t: PromoTemplate) => CREATION_TYPES[t.type].video;
@@ -91,7 +99,7 @@ export const recipeName = (t: PromoTemplate) => RECIPES[t.recipe].label;
 
 export function priceText(t: PromoTemplate): string {
   const usd = estimateTemplateUsd(t);
-  return usd < 1 ? `about $${usd.toFixed(2)}` : `about $${Number.isInteger(usd) ? usd : usd.toFixed(1)}`;
+  return `about $${Number.isInteger(usd) && usd >= 1 ? usd : usd.toFixed(2)}`;
 }
 
 /** Plain-language names of the models a template uses, for the "made with" line. */

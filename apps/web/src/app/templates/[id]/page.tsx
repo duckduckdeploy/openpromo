@@ -2,14 +2,14 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { ArrowRight } from 'lucide-react';
-import { CREATION_TYPES, TEMPLATE_GROUPS, TEMPLATES } from '@openpromo/shared';
+import { CREATION_TYPES, type PromoTemplate, TEMPLATE_GROUPS, TEMPLATES } from '@openpromo/shared';
 import { ButtonLink } from '@/components/button';
 import { CtaBand } from '@/components/cta-band';
 import { FaqList } from '@/components/faq';
 import { JsonLd } from '@/components/json-ld';
 import { TemplateCard } from '@/components/template-card';
 import { YepapiOffer } from '@/components/yepapi-offer';
-import { getTemplateById, isVideoTemplate, kindOf, modelsOf, previewOf, priceText, recipeName, templateFaqs, templateKinds, templateTitles } from '@/content/templates';
+import { getTemplateById, isVideoTemplate, kindLayout, kindOf, modelsOf, previewOf, priceText, recipeName, templateFaqs, templateKinds, templateTitles } from '@/content/templates';
 import { pageMeta } from '@/lib/metadata';
 import { breadcrumbList, faqPage } from '@/lib/schema';
 import { SIGN_UP_URL, SITE_URL } from '@/lib/site';
@@ -43,7 +43,10 @@ export default async function TemplatePage({ params }: TemplatePageProps) {
   const video = isVideoTemplate(t);
   const faqs = templateFaqs(t);
   const models = modelsOf(t);
-  const related = TEMPLATES.filter((o) => o.id !== t.id && (o.group === t.group || o.recipe === t.recipe)).slice(0, 4);
+  // Same kind, so the row shares one frame; the closest (same group or recipe) first.
+  const sameKind = TEMPLATES.filter((o) => o.id !== t.id && kindOf(o) === kind.id);
+  const close = (o: PromoTemplate) => o.group === t.group || o.recipe === t.recipe;
+  const related = [...sameKind.filter(close), ...sameKind.filter((o) => !close(o))].slice(0, kindLayout[kind.id].shown / 2);
   const heading = templateTitles[t.id] ?? `${t.name} template`;
 
   return (
@@ -161,7 +164,7 @@ export default async function TemplatePage({ params }: TemplatePageProps) {
           <h2 id="related-title" className="text-title text-center">
             Similar templates
           </h2>
-          <ul className="mx-auto mt-10 grid max-w-6xl grid-cols-2 gap-5 md:grid-cols-4">
+          <ul className={`mx-auto mt-10 grid max-w-6xl gap-5 ${kindLayout[kind.id].grid}`}>
             {related.map((o) => (
               <TemplateCard key={o.id} template={o} />
             ))}

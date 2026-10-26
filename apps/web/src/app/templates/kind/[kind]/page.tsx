@@ -5,7 +5,7 @@ import { TEMPLATE_GROUPS, type TemplateGroup } from '@openpromo/shared';
 import { CtaBand } from '@/components/cta-band';
 import { JsonLd } from '@/components/json-ld';
 import { TemplateCard } from '@/components/template-card';
-import { templateKinds, templatesOfKind } from '@/content/templates';
+import { kindLayout, templateKinds, templatesOfKind } from '@/content/templates';
 import { pageMeta } from '@/lib/metadata';
 import { breadcrumbList } from '@/lib/schema';
 import { SITE_URL } from '@/lib/site';
@@ -88,7 +88,7 @@ export default async function TemplateKindPage({ params }: KindPageProps) {
               </h2>
               <p className="mt-3 max-w-2xl text-lg text-muted">{TEMPLATE_GROUPS[g].description}</p>
             </div>
-            <ul className="mx-auto mt-10 grid max-w-6xl grid-cols-2 gap-5 md:grid-cols-3 lg:grid-cols-4">
+            <ul className={`mx-auto mt-10 grid max-w-6xl gap-5 ${kindLayout[kind.id].grid}`}>
               {templates
                 .filter((t) => t.group === g)
                 .map((t) => (

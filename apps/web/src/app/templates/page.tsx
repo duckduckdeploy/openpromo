@@ -4,7 +4,7 @@ import { TEMPLATES } from '@openpromo/shared';
 import { CtaBand } from '@/components/cta-band';
 import { JsonLd } from '@/components/json-ld';
 import { TemplateCard } from '@/components/template-card';
-import { getTemplateById, templateKinds, templatesOfKind } from '@/content/templates';
+import { getTemplateById, kindLayout, showcaseOfKind, templateKinds, templatesOfKind } from '@/content/templates';
 import { pageMeta } from '@/lib/metadata';
 import { breadcrumbList } from '@/lib/schema';
 import { SITE_URL } from '@/lib/site';
@@ -15,7 +15,8 @@ export const metadata = pageMeta({
   path: '/templates',
 });
 
-const FEATURED = ['ugc-testimonial', 'mascot-skit', 'comic-story', 'cinematic-product', 'pov-meme', 'retro-ad'];
+// All reels, so the row shares one frame.
+const FEATURED = ['ugc-testimonial', 'mascot-skit', 'comic-story', 'cinematic-product', 'pov-meme', 'retro-ad', 'claymation', 'day-in-the-life'];
 
 export default function TemplatesPage() {
   const featured = FEATURED.map(getTemplateById).filter((t) => t !== undefined);
@@ -55,7 +56,7 @@ export default function TemplatesPage() {
         <h2 id="featured-title" className="text-title text-center">
           Most popular
         </h2>
-        <ul className="mx-auto mt-12 grid max-w-6xl grid-cols-2 gap-5 md:grid-cols-3 lg:grid-cols-6">
+        <ul className={`mx-auto mt-12 grid max-w-6xl gap-5 ${kindLayout.reels.grid}`}>
           {featured.map((t) => (
             <TemplateCard key={t.id} template={t} />
           ))}
@@ -77,8 +78,8 @@ export default function TemplatesPage() {
                 <ArrowRight className="size-4" aria-hidden="true" />
               </Link>
             </div>
-            <ul className="mx-auto mt-10 grid max-w-6xl grid-cols-2 gap-5 md:grid-cols-3 lg:grid-cols-4">
-              {templatesOfKind(kind.id).slice(0, 8).map((t) => (
+            <ul className={`mx-auto mt-10 grid max-w-6xl gap-5 ${kindLayout[kind.id].grid}`}>
+              {showcaseOfKind(kind.id).slice(0, kindLayout[kind.id].shown).map((t) => (
                 <TemplateCard key={t.id} template={t} />
               ))}
             </ul>
