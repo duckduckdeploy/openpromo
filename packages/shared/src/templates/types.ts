@@ -86,6 +86,11 @@ export type PromoTemplate = {
   /** Video only: the music prompt. */
   music?: string;
   captions?: CaptionPreset | "none";
+  /**
+   * Video only: on-screen text over full-frame footage stays up for the whole scene, because the
+   * text is the format (a POV meme). Otherwise a title shows briefly and gets out of the way.
+   */
+  textStays?: boolean;
   /** Video only: length range in seconds. */
   duration?: [number, number];
   formats: MediaFormat[];

@@ -160,6 +160,8 @@ body { font-family: var(--font-body); color: var(--text); -webkit-font-smoothing
 .layout-full .full-text { justify-content: flex-end; padding-bottom: 4cqmin; text-shadow: 0 .04em .3em rgba(0,0,0,.45); }
 .layout-full .full-text .headline { max-width: 18ch; }
 .layout-full .headline.xl, .layout-full .headline.lg { font-size: calc(9.5cqmin * var(--fit) * var(--s)); }
+/* Over moving footage a title is an overlay, not the subject: smaller than on a still poster. */
+.clip.layout-full .headline.xl, .clip.layout-full .headline.lg { font-size: calc(6.5cqmin * var(--fit) * var(--s)); }
 /* In tall videos the bottom half belongs to captions and the apps' buttons: titles go at the top. */
 .clip.layout-full.shape-tall .full-text { justify-content: flex-start; padding-bottom: 0; }
 .clip.layout-full.shape-tall .scrim { background: linear-gradient(180deg, rgba(0,0,0,.55) 0%, rgba(0,0,0,0) 38%); }

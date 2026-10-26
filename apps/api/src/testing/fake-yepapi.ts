@@ -32,7 +32,7 @@ type JsonSchema = {
   maximum?: number;
 };
 
-/** A value that fits the schema: first enum value, two array items, words for strings. */
+/** A value that fits the schema: first enum value, two array items (three scenes, the least a video takes), words for strings. */
 export function sampleFromSchema(schema: JsonSchema, key = "value", depth = 0): unknown {
   if (depth > 8) return null;
   const variant = schema.anyOf ?? schema.oneOf;
@@ -43,7 +43,7 @@ export function sampleFromSchema(schema: JsonSchema, key = "value", depth = 0): 
     case "object":
       return Object.fromEntries(Object.entries(schema.properties ?? {}).map(([k, s]) => [k, sampleFromSchema(s, k, depth + 1)]));
     case "array":
-      return Array.from({ length: Math.max(2, schema.minItems ?? 0) }, (_, i) => sampleFromSchema(schema.items ?? { type: "string" }, `${key}${i + 1}`, depth + 1));
+      return Array.from({ length: Math.max(key === "scenes" ? 3 : 2, schema.minItems ?? 0) }, (_, i) => sampleFromSchema(schema.items ?? { type: "string" }, `${key}${i + 1}`, depth + 1));
     case "number":
     case "integer":
       return Math.min(schema.maximum ?? 50, Math.max(schema.minimum ?? 0, 50));

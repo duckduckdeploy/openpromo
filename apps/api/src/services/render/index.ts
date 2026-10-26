@@ -270,7 +270,8 @@ async function screenshotScene(dir: string, input: DocumentInput, sceneIndex: nu
   const file = path.join(dir, `scene-${sceneIndex}.html`);
   await writeFile(file, imageDocument(input, sceneIndex));
   return withPage({ width, height }, async (page) => {
-    await page.goto(pathToFileURL(file).href, { waitUntil: "networkidle0", timeout: 60_000 });
+    // Generous: with several renders sharing the machine, loading a video backdrop can be slow.
+    await page.goto(pathToFileURL(file).href, { waitUntil: "networkidle0", timeout: 180_000 });
     await page.waitForFunction("window.__openpromoReady === true", { timeout: 30_000 });
     const fit = Number(await page.$eval(".scene", (el) => el.getAttribute("data-fit") ?? "1"));
     const bytes = Buffer.from(await page.screenshot({ type, ...(type === "jpeg" ? { quality: 90 } : {}) }));

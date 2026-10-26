@@ -1,4 +1,4 @@
-import { MEDIA_FORMATS, type BrandProfile, type CameraMove, type CreationSpec, type MediaFormat } from "@openpromo/shared";
+import { getTemplate, MEDIA_FORMATS, type BrandProfile, type CameraMove, type CreationSpec, type MediaFormat } from "@openpromo/shared";
 import { captionLayer, captionPreset } from "./caption-styles";
 import { backdropOf, esc, lookOf, SCENE_CSS, sceneHtml, shapeOf, type SceneContext } from "./layouts";
 import { googleFontsHref, themeCss } from "./theme";
@@ -144,6 +144,8 @@ export function videoDocument(input: VideoInput): string {
   // Scene text keeps out of the caption band and, on 9:16, out of the platforms' own buttons and text.
   const reserve = input.captions.length ? `cap-room-${input.spec.captionStyle?.position ?? "lower"}` : shapeOf(input.format) === "tall" ? "ui-room" : "";
 
+  const textStays = Boolean(input.spec.templateId && getTemplate(input.spec.templateId)?.textStays);
+
   input.spec.scenes.forEach((scene, i) => {
     const start = input.sceneStarts[i] ?? 0;
     const duration = input.sceneDurations[i] ?? scene.durationMs;
@@ -176,6 +178,17 @@ export function videoDocument(input: VideoInput): string {
     tl.push(`tl.fromTo("#scene-${i} .content", ${entrance}, ${t0.toFixed(3)});`);
     // Never from fully transparent: a cut would show one empty frame of background, a visible flash.
     tl.push(`tl.from("#scene-${i} .in", { opacity: 0.2, y: ${Math.round(Math.min(width, height) * 0.04)}, duration: 0.5, ease: "power3.out", stagger: 0.12 }, ${(t0 + 0.12).toFixed(3)});`);
+    // Over full-frame footage a title is a brief opener, not a banner: it leaves once it has been
+    // read, so faces and captions get the frame back. A call to action stays.
+    if (scene.layout === "full" && !textStays && lookOf(ctx, scene) === "photo") {
+      const words = `${scene.text.eyebrow} ${scene.text.headline} ${scene.text.body}`.split(/\s+/).filter(Boolean).length;
+      const hold = Math.min(3.2, 1.2 + words * 0.3);
+      if (words && duration / 1000 > hold + 0.8) {
+        const at = (t0 + hold).toFixed(3);
+        tl.push(`tl.to("#scene-${i} .full-text .in:not(.cta)", { opacity: 0, y: -${Math.round(Math.min(width, height) * 0.02)}, duration: 0.4, ease: "power1.in" }, ${at});`);
+        if (!scene.text.cta.trim()) tl.push(`tl.to("#scene-${i} .scrim", { opacity: 0, duration: 0.5 }, ${at});`);
+      }
+    }
   });
 
   const preset = captionPreset(input.spec.captions, input.spec.captionStyle);

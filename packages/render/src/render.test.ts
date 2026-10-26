@@ -120,6 +120,24 @@ describe("documents", () => {
     expect(html).toContain('class="clip cap-room-lower scene');
   });
 
+  it("shows a title over footage briefly, unless the template's text stays", () => {
+    const footage = creationSpec.parse({
+      scenes: [
+        { id: "a", layout: "full", text: { headline: "Nine ingredients or fewer" }, media: { assetId: "clip" }, durationMs: 6000 },
+        { id: "b", layout: "full", text: { headline: "Try it", cta: "Shop now" }, media: { assetId: "clip" }, durationMs: 6000 },
+      ],
+    });
+    const doc = (s: typeof footage) =>
+      videoDocument({ brand, spec: s, format: "story", assets: { files: { clip: { path: "assets/clip.mp4", video: true } } }, voice: [], captions: [], sceneStarts: [0, 6000], sceneDurations: [6000, 6000] });
+    const html = doc(footage);
+    expect(html).toContain('tl.to("#scene-0 .full-text .in:not(.cta)", { opacity: 0');
+    expect(html).toContain('tl.to("#scene-0 .scrim"');
+    // The call to action stays, and so does the shade behind it.
+    expect(html).toContain('tl.to("#scene-1 .full-text .in:not(.cta)"');
+    expect(html).not.toContain('tl.to("#scene-1 .scrim"');
+    expect(doc({ ...footage, templateId: "pov-meme" })).not.toContain(".full-text .in:not(.cta)");
+  });
+
   it("draws each caption preset", () => {
     for (const preset of CAPTION_PRESET_KEYS) {
       const html = videoDocument({

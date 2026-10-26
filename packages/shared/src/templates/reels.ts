@@ -97,6 +97,7 @@ export const REEL_TEMPLATES: PromoTemplate[] = [
     type: "reel",
     group: "real-people",
     recipe: "broll",
+    textStays: true,
     name: "POV meme",
     summary: "\"POV: you just found…\" text over relatable clips. Native TikTok format.",
     what: "A meme-format reel: a 'POV' text line on top, quick relatable clips from the viewer's point of view, ending on the product.",

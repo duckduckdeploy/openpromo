@@ -89,13 +89,15 @@ const writtenTemplateCreation = z.object({
 /** Full-frame video recipes: the picture and the captions carry it, so titles are kept for the ends. */
 const TITLES_AT_ENDS = "On-screen text: a short title (headline, under 6 words) on the first scene only, and the call to action (cta) on the last scene. Leave every other scene's headline, body and cta empty; the captions show what is said.";
 
+/** Templates whose pictures carry the video, so titles belong only on the first and last scene. */
+const titlesAtEnds = (t: PromoTemplate) => CREATION_TYPES[t.type].video && !t.textStays && ["cast-story", "on-camera", "broll", "stills-motion"].includes(t.recipe);
+
 function templateBrief(t: PromoTemplate): string {
-  const videoClips = CREATION_TYPES[t.type].video && ["cast-story", "on-camera", "broll", "stills-motion"].includes(t.recipe);
   return [
     `Template: ${t.name}. ${t.what}`,
     `Why it works: ${t.why}`,
     `Recipe (${RECIPES[t.recipe].label}): ${RECIPE_GUIDE[t.recipe]}`,
-    videoClips ? TITLES_AT_ENDS : "",
+    titlesAtEnds(t) ? TITLES_AT_ENDS : "",
     t.look ? `Look of every picture and clip: ${t.look}` : "",
     t.cast !== "none" ? `Cast: ${t.cast}.` : "",
     `Beats, in order:\n${t.beats.map((b) => `  - ${b.role}${b.seconds ? ` (~${b.seconds}s)` : ""}: ${b.direction}`).join("\n")}`,
@@ -163,18 +165,21 @@ export async function writeFromTemplate(
   let costUsd = 0;
   let data: z.infer<typeof writtenTemplateCreation> | undefined;
   let note = "";
+  let problems: string[] = [];
   // One retry when the draft is unusable: too few scenes for the template, or AI scenes with nothing to draw.
   for (let attempt = 0; attempt < 2; attempt++) {
     const result = await chatJson(yep, { model: TEXT_MODELS.write, system, user: user + note, schema: writtenTemplateCreation, name: "creation", temperature: 0.8, maxTokens: 14000 });
     costUsd += result.costUsd;
     data = result.data;
-    const problems = draftProblems(template, input.type, data);
+    problems = draftProblems(template, input.type, data);
     if (!problems.length) break;
     note = `
 
 Your previous draft was unusable: ${problems.join("; ")}. Write the whole thing again, complete.`;
   }
   if (!data) throw new AppError(502, "ai_bad_output", "The writer returned nothing. Try again.");
+  // A broken draft costs the user media money at render, so it is never saved.
+  if (problems.length) throw new AppError(502, "ai_bad_output", `The writer's draft was unusable (${problems.join("; ")}). Try again.`);
 
   const known = new Set(input.assets.map((a) => a.id));
   const points = new Set(input.brand.positioning.points.map((p) => p.id));
@@ -227,6 +232,10 @@ Your previous draft was unusable: ${problems.join("; ")}. Write the whole thing 
   if (!scenes.length) throw new AppError(502, "ai_bad_output", "The writer returned no scenes. Try again.");
   // A video must hook in the first seconds; a silent opening shot gets the title on screen.
   const first = scenes[0]!;
+  // The writer is told to keep titles to the ends; this makes sure of it.
+  if (titlesAtEnds(template)) {
+    for (const scene of scenes.slice(1, -1)) Object.assign(scene.text, { eyebrow: "", headline: "", body: "", stat: "", bullets: [], cta: "" });
+  }
   if (isVideo && !first.text.headline.trim() && !first.narration.trim() && !first.dialogue.trim()) first.text.headline = data.title.slice(0, 80);
 
   if (isVideo) {
