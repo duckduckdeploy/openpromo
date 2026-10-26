@@ -134,7 +134,7 @@ export function sceneHtml(ctx: SceneContext, scene: Scene, attrs = "", extraClas
   const backdrop =
     look === "photo" && bgSrc && ctx.mode === "image"
       ? ctx.isVideo(backdropRef?.assetId)
-        ? `<video class="backdrop" src="${esc(bgSrc)}" muted playsinline></video>`
+        ? `<video class="backdrop" src="${esc(bgSrc)}" muted playsinline preload="auto"></video>`
         : `<img class="backdrop" src="${esc(bgSrc)}" alt="">`
       : "";
   const hasText = Boolean(scene.text.headline.trim() || scene.text.body.trim() || scene.text.eyebrow.trim() || scene.text.cta.trim());

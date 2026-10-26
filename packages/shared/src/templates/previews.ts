@@ -22,7 +22,7 @@ export const TEMPLATE_PREVIEWS: Record<string, TemplatePreview[]> = {
   "anime-short": [
     {
       "business": "Spokewatt Cycles",
-      "video": "https://cdn.openpromo.gg/templates/anime-short/spokewatt-310fb15d88.mp4",
+      "video": "https://cdn.openpromo.gg/templates/anime-short/spokewatt-5229249119.mp4",
       "poster": "https://cdn.openpromo.gg/templates/anime-short/spokewatt-poster-bfd3e78b4c.webp"
     }
   ],
@@ -31,6 +31,13 @@ export const TEMPLATE_PREVIEWS: Record<string, TemplatePreview[]> = {
       "business": "Tallybird",
       "video": "https://cdn.openpromo.gg/templates/app-demo-reel/tallybird-15b6670a11.mp4",
       "poster": "https://cdn.openpromo.gg/templates/app-demo-reel/tallybird-poster-1de0da3958.webp"
+    }
+  ],
+  "asmr-product": [
+    {
+      "business": "Crumb & Co",
+      "video": "https://cdn.openpromo.gg/templates/asmr-product/crumb-10ef2e1497.mp4",
+      "poster": "https://cdn.openpromo.gg/templates/asmr-product/crumb-poster-937bb7491d.webp"
     }
   ],
   "before-after": [
@@ -51,17 +58,24 @@ export const TEMPLATE_PREVIEWS: Record<string, TemplatePreview[]> = {
       "poster": "https://cdn.openpromo.gg/templates/bold-headline/tallybird-7affdec395.webp"
     }
   ],
+  "brand-film": [
+    {
+      "business": "The Saltmarsh House",
+      "video": "https://cdn.openpromo.gg/templates/brand-film/saltmarsh-8d9c3282da.mp4",
+      "poster": "https://cdn.openpromo.gg/templates/brand-film/saltmarsh-poster-42ceda08f0.webp"
+    }
+  ],
   "cinematic-product": [
     {
       "business": "Spokewatt Cycles",
-      "video": "https://cdn.openpromo.gg/templates/cinematic-product/spokewatt-40f804a2c7.mp4",
+      "video": "https://cdn.openpromo.gg/templates/cinematic-product/spokewatt-68c1b5f207.mp4",
       "poster": "https://cdn.openpromo.gg/templates/cinematic-product/spokewatt-poster-1a1439c150.webp"
     }
   ],
   "claymation": [
     {
       "business": "Sudsy Paws",
-      "video": "https://cdn.openpromo.gg/templates/claymation/sudsypaws-71282832e3.mp4",
+      "video": "https://cdn.openpromo.gg/templates/claymation/sudsypaws-0ef35c9b9a.mp4",
       "poster": "https://cdn.openpromo.gg/templates/claymation/sudsypaws-poster-77216b26ec.webp"
     }
   ],
@@ -86,14 +100,21 @@ export const TEMPLATE_PREVIEWS: Record<string, TemplatePreview[]> = {
   "comic-story": [
     {
       "business": "Tallybird",
-      "video": "https://cdn.openpromo.gg/templates/comic-story/tallybird-7da5db330c.mp4",
-      "poster": "https://cdn.openpromo.gg/templates/comic-story/tallybird-poster-c0a53ca370.webp"
+      "video": "https://cdn.openpromo.gg/templates/comic-story/tallybird-e06e41e621.mp4",
+      "poster": "https://cdn.openpromo.gg/templates/comic-story/tallybird-poster-4b6223190e.webp"
+    }
+  ],
+  "customer-story": [
+    {
+      "business": "Iron Bell Boxing Club",
+      "video": "https://cdn.openpromo.gg/templates/customer-story/ironbell-f1d2f3aac0.mp4",
+      "poster": "https://cdn.openpromo.gg/templates/customer-story/ironbell-poster-0939172e87.webp"
     }
   ],
   "day-in-the-life": [
     {
       "business": "Sudsy Paws",
-      "video": "https://cdn.openpromo.gg/templates/day-in-the-life/sudsypaws-4719d01500.mp4",
+      "video": "https://cdn.openpromo.gg/templates/day-in-the-life/sudsypaws-f079086712.mp4",
       "poster": "https://cdn.openpromo.gg/templates/day-in-the-life/sudsypaws-poster-8a5c23f9e0.webp"
     }
   ],
@@ -103,11 +124,39 @@ export const TEMPLATE_PREVIEWS: Record<string, TemplatePreview[]> = {
       "poster": "https://cdn.openpromo.gg/templates/event-announcement/ironbell-61e2bd79ea.webp"
     }
   ],
+  "faq-video": [
+    {
+      "business": "The Saltmarsh House",
+      "video": "https://cdn.openpromo.gg/templates/faq-video/saltmarsh-e11ad7c646.mp4",
+      "poster": "https://cdn.openpromo.gg/templates/faq-video/saltmarsh-poster-22fd247cf2.webp"
+    }
+  ],
+  "feature-tour": [
+    {
+      "business": "Tallybird",
+      "video": "https://cdn.openpromo.gg/templates/feature-tour/tallybird-6e27c561a9.mp4",
+      "poster": "https://cdn.openpromo.gg/templates/feature-tour/tallybird-poster-2861365bc4.webp"
+    }
+  ],
   "founder-story": [
     {
       "business": "Crumb & Co",
       "video": "https://cdn.openpromo.gg/templates/founder-story/crumb-ad69a3182a.mp4",
       "poster": "https://cdn.openpromo.gg/templates/founder-story/crumb-poster-5037038a3f.webp"
+    }
+  ],
+  "getting-started": [
+    {
+      "business": "Tallybird",
+      "video": "https://cdn.openpromo.gg/templates/getting-started/tallybird-aef2ebf8fb.mp4",
+      "poster": "https://cdn.openpromo.gg/templates/getting-started/tallybird-poster-b7dcb97674.webp"
+    }
+  ],
+  "how-to-animated": [
+    {
+      "business": "Dewfold",
+      "video": "https://cdn.openpromo.gg/templates/how-to-animated/dewfold-0eebad2460.mp4",
+      "poster": "https://cdn.openpromo.gg/templates/how-to-animated/dewfold-poster-8586cb4ea8.webp"
     }
   ],
   "kinetic-type": [
@@ -123,10 +172,24 @@ export const TEMPLATE_PREVIEWS: Record<string, TemplatePreview[]> = {
       "poster": "https://cdn.openpromo.gg/templates/lifestyle-photo/ironbell-72753b774f.webp"
     }
   ],
+  "listicle": [
+    {
+      "business": "Dewfold",
+      "video": "https://cdn.openpromo.gg/templates/listicle/dewfold-88c7b56aa1.mp4",
+      "poster": "https://cdn.openpromo.gg/templates/listicle/dewfold-poster-14d2ad0a05.webp"
+    }
+  ],
   "luxury-minimal": [
     {
       "business": "The Saltmarsh House",
       "poster": "https://cdn.openpromo.gg/templates/luxury-minimal/saltmarsh-1da492a155.webp"
+    }
+  ],
+  "mascot-explainer": [
+    {
+      "business": "Wordnest Academy",
+      "video": "https://cdn.openpromo.gg/templates/mascot-explainer/wordnest-75a946226a.mp4",
+      "poster": "https://cdn.openpromo.gg/templates/mascot-explainer/wordnest-poster-4b07010f04.webp"
     }
   ],
   "mascot-post": [
@@ -138,8 +201,8 @@ export const TEMPLATE_PREVIEWS: Record<string, TemplatePreview[]> = {
   "mascot-skit": [
     {
       "business": "Wordnest Academy",
-      "video": "https://cdn.openpromo.gg/templates/mascot-skit/wordnest-82d6e32f5d.mp4",
-      "poster": "https://cdn.openpromo.gg/templates/mascot-skit/wordnest-poster-f686533b9a.webp"
+      "video": "https://cdn.openpromo.gg/templates/mascot-skit/wordnest-c2c30a18e0.mp4",
+      "poster": "https://cdn.openpromo.gg/templates/mascot-skit/wordnest-poster-7322aa2bb9.webp"
     }
   ],
   "offer-banner": [
@@ -158,8 +221,15 @@ export const TEMPLATE_PREVIEWS: Record<string, TemplatePreview[]> = {
   "pov-meme": [
     {
       "business": "Tallybird",
-      "video": "https://cdn.openpromo.gg/templates/pov-meme/tallybird-3190825b1f.mp4",
+      "video": "https://cdn.openpromo.gg/templates/pov-meme/tallybird-13db88500a.mp4",
       "poster": "https://cdn.openpromo.gg/templates/pov-meme/tallybird-poster-39b841d4a8.webp"
+    }
+  ],
+  "presenter-promo": [
+    {
+      "business": "Spokewatt Cycles",
+      "video": "https://cdn.openpromo.gg/templates/presenter-promo/spokewatt-2a88b1e098.mp4",
+      "poster": "https://cdn.openpromo.gg/templates/presenter-promo/spokewatt-poster-fc041074e9.webp"
     }
   ],
   "product-carousel": [
@@ -191,8 +261,22 @@ export const TEMPLATE_PREVIEWS: Record<string, TemplatePreview[]> = {
   "retro-ad": [
     {
       "business": "Iron Bell Boxing Club",
-      "video": "https://cdn.openpromo.gg/templates/retro-ad/ironbell-41b8e494c8.mp4",
+      "video": "https://cdn.openpromo.gg/templates/retro-ad/ironbell-b27546cc9f.mp4",
       "poster": "https://cdn.openpromo.gg/templates/retro-ad/ironbell-poster-1b12d9b2c5.webp"
+    }
+  ],
+  "retro-commercial": [
+    {
+      "business": "Sudsy Paws",
+      "video": "https://cdn.openpromo.gg/templates/retro-commercial/sudsypaws-e2f31888ec.mp4",
+      "poster": "https://cdn.openpromo.gg/templates/retro-commercial/sudsypaws-poster-a9474476f7.webp"
+    }
+  ],
+  "street-interview": [
+    {
+      "business": "Wordnest Academy",
+      "video": "https://cdn.openpromo.gg/templates/street-interview/wordnest-d3a2e902e3.mp4",
+      "poster": "https://cdn.openpromo.gg/templates/street-interview/wordnest-poster-e48da44c2a.webp"
     }
   ],
   "tips-carousel": [
@@ -210,11 +294,25 @@ export const TEMPLATE_PREVIEWS: Record<string, TemplatePreview[]> = {
       ]
     }
   ],
+  "transformation": [
+    {
+      "business": "Sudsy Paws",
+      "video": "https://cdn.openpromo.gg/templates/transformation/sudsypaws-06fe42e303.mp4",
+      "poster": "https://cdn.openpromo.gg/templates/transformation/sudsypaws-poster-5ee3c242f9.webp"
+    }
+  ],
   "ugc-testimonial": [
     {
       "business": "Dewfold",
-      "video": "https://cdn.openpromo.gg/templates/ugc-testimonial/dewfold-82f328b452.mp4",
-      "poster": "https://cdn.openpromo.gg/templates/ugc-testimonial/dewfold-poster-84834262e8.webp"
+      "video": "https://cdn.openpromo.gg/templates/ugc-testimonial/dewfold-73cc2df815.mp4",
+      "poster": "https://cdn.openpromo.gg/templates/ugc-testimonial/dewfold-poster-1d28e0d174.webp"
+    }
+  ],
+  "whiteboard-explainer": [
+    {
+      "business": "Tallybird",
+      "video": "https://cdn.openpromo.gg/templates/whiteboard-explainer/tallybird-68fd7ec33e.mp4",
+      "poster": "https://cdn.openpromo.gg/templates/whiteboard-explainer/tallybird-poster-9256ff6844.webp"
     }
   ],
   "youtube-thumbnail": [
