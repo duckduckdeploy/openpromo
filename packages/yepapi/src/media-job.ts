@@ -63,8 +63,20 @@ export async function runMediaJob(yep: YepApi, request: MediaQueueParams, option
 
   const deadline = Date.now() + (options.timeoutMs ?? 15 * 60_000);
   const pollMs = options.pollMs ?? 3000;
+  let failures = 0;
   for (;;) {
-    const { data } = await yep.media.status(jobId, { signal: options.signal });
+    let data: MediaStatusData;
+    try {
+      ({ data } = await yep.media.status(jobId, { signal: options.signal }));
+      failures = 0;
+    } catch (error) {
+      // Polling is free and the job keeps running upstream, so a status outage (5xx, network,
+      // 429) is waited out until the deadline instead of failing the whole render.
+      if (!(error instanceof YepApiError) || !error.isRetryable || Date.now() > deadline) throw error;
+      failures++;
+      await sleep(Math.min(30_000, pollMs * 2 ** Math.min(failures, 4)), options.signal);
+      continue;
+    }
     if (data.status === 'completed') return toResult(jobId, data);
     if (data.status === 'failed') {
       throw new YepApiError(data.error || 'The media job failed', { code: 'MEDIA_JOB_FAILED', status: 502, endpoint: '/v1/media/status' });

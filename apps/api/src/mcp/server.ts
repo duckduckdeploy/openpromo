@@ -161,14 +161,27 @@ function buildServer(app: FastifyInstance, authorization: string): McpServer {
     true,
   );
   tool(
+    "list_templates",
+    "The template gallery: styles for images, carousels, reels, promo videos and tutorials (UGC reviews, mascots, comics, cinematic product films, motion type, screen demos), each with what it is, when to use it, its beats, typical price and an example. Pick one before create_creation. Free.",
+    { type: z.enum(TYPES).optional() },
+    async (a) => {
+      const data = (await rest("GET", "/templates")) as { templates: Array<Record<string, unknown> & { type: string; previews?: Array<{ poster: string; video?: string }> }> };
+      return data.templates
+        .filter((t) => !a.type || t.type === a.type)
+        .map((t) => ({ ...pick(t, ["id", "type", "group", "recipe", "name", "summary", "when", "bestFor", "duration", "formats", "estimateUsd"]), beats: (t.beats as Array<{ role: string }>).map((b) => b.role), example: t.previews?.[0]?.video ?? t.previews?.[0]?.poster ?? null }));
+    },
+    true,
+  );
+  tool(
     "create_creation",
-    "Write a new image, carousel, reel, promo video or tutorial from an idea or a brief (one writing call, about $0.03–0.08; nothing is rendered yet). Returns the scenes, the checks and the id to render.",
+    "Write a new image, carousel, reel, promo video or tutorial from a template, an idea or a brief (one writing call, about $0.03–0.10; nothing is rendered yet). Returns the scenes, the checks and the id to render.",
     {
       project_id: projectId,
       type: z.enum(TYPES),
       format: z.enum(FORMATS).optional().describe("Size. Default: square for images and carousels, story for reels, landscape for videos"),
+      template_id: z.string().max(60).optional().describe("A template id from list_templates; its type must match"),
       idea_id: z.string().uuid().optional(),
-      brief: z.string().max(4000).optional().describe("What it should say, when not made from an idea"),
+      brief: z.string().max(4000).optional().describe("What it should say, when not made from an idea. With a template it is optional: an angle, product or offer"),
       voice: z.boolean().optional().describe("Videos: add a voiceover (default true)"),
       allow_generated: z.boolean().optional().describe("Let the writer ask for AI pictures where the brand's own photos and screenshots do not fit (they cost credits when rendered)"),
     },
@@ -180,6 +193,7 @@ function buildServer(app: FastifyInstance, authorization: string): McpServer {
         brief: a.brief,
         voice: a.voice,
         allowGenerated: a.allow_generated,
+        templateId: a.template_id,
       }),
   );
   tool("get_creation", "A creation's scenes, post caption, checks and renders. Free.", { creation_id: z.string().uuid() }, (a) => rest("GET", `/creations/${a.creation_id}`), true);
@@ -188,6 +202,12 @@ function buildServer(app: FastifyInstance, authorization: string): McpServer {
     "Save edits to a creation: the full spec (scenes with layout, text, media, narration, duration; style; audio; captions), its title or post caption. Read it with get_creation first and send back the whole spec. The checks run again. Free.",
     { creation_id: z.string().uuid(), spec: z.record(z.string(), z.unknown()).optional(), title: z.string().max(200).optional(), caption: z.string().max(5000).optional() },
     (a) => rest("PUT", `/creations/${a.creation_id}`, { spec: a.spec, title: a.title, caption: a.caption }),
+  );
+  tool(
+    "chat_edit_creation",
+    "Change a creation in plain words (\"make the colours blue\", \"the owl should wear glasses\", \"shorter voiceover\"). The edits are applied and saved; only the pictures and clips they touch are made again on the next render. About $0.01. Returns the reply, the changes and the likely price of the next render.",
+    { creation_id: z.string().uuid(), message: z.string().min(1).max(2000) },
+    (a) => rest("POST", `/creations/${a.creation_id}/chat`, { message: a.message }),
   );
   tool(
     "render_creation",

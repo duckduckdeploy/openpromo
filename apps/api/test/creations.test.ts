@@ -164,7 +164,7 @@ describe("ideas and creations", () => {
     await api.ok("POST", `/creations/${reel.id}/renders`, { quality: "draft" });
     await runQueued("render.run");
     const submit = harness.fake.requests.filter((r) => r.path === "/v1/media/queue").at(-1)!;
-    expect(submit.body).toMatchObject({ model: "google/veo-3-lite", options: { aspectRatio: "9:16", duration: "6" } });
+    expect(submit.body).toMatchObject({ model: "google/veo-3-lite", options: { aspectRatio: "9:16", duration: "4" } });
     const frame = await sharp(Buffer.from(submit.body.imageData.base64, "base64")).metadata();
     expect([frame.width, frame.height]).toEqual([720, 1280]);
 
@@ -172,5 +172,50 @@ describe("ideas and creations", () => {
     expect(after.renders[0].status, after.renders[0].error).toBe("done");
     const [clip] = await dataDb.select().from(schema.assets).where(eq(schema.assets.id, after.spec.scenes[0].background.assetId));
     expect(clip).toMatchObject({ kind: "video", role: "broll", source: "generated" });
+  });
+
+  it("lists the template gallery without an account", async () => {
+    const app = await getApp();
+    const res = await app.inject({ method: "GET", url: "/api/templates" });
+    expect(res.statusCode).toBe(200);
+    const data = res.json().data as { templates: Array<{ id: string; estimateUsd: number; previews: unknown[] }>; groups: Record<string, unknown> };
+    expect(data.templates.length).toBeGreaterThan(40);
+    expect(data.templates.every((t) => t.estimateUsd > 0 && Array.isArray(t.previews))).toBe(true);
+    expect(Object.keys(data.groups)).toContain("characters");
+  });
+
+  it("writes from a template, renders it with a cast and shows what is being made", { timeout: 300_000 }, async () => {
+    const { api, project } = await brandedProject();
+    // A template of another type is refused.
+    expect((await api.request("POST", `/api/projects/${project.id}/creations`, { type: "image", templateId: "mascot-skit" })).status).toBe(400);
+
+    // No brief needed: the template and the brand are enough.
+    const creation = await api.ok("POST", `/projects/${project.id}/creations`, { type: "reel", templateId: "mascot-skit" });
+    expect(creation.spec.templateId).toBe("mascot-skit");
+    expect(creation.spec.cast.length).toBeGreaterThan(0);
+    const scene = creation.spec.scenes[0];
+    expect(scene.layout).toBe("full");
+    expect(scene.media.generate).toMatchObject({ kind: "video" });
+    expect(scene.media.generate.keyframe).toBeTruthy();
+
+    const render = await api.ok("POST", `/creations/${creation.id}/renders`, { format: "story", quality: "draft" });
+    await runQueued("render.run");
+    const after = await api.ok("GET", `/creations/${creation.id}`);
+    expect(after.renders.find((r: { id: string }) => r.id === render.id).status, after.renders[0].error).toBe("done");
+    // The cast sheet is drawn first and passed to every keyframe; each made clip keeps its recipe.
+    expect(after.spec.cast[0].sheetAssetId).toBeTruthy();
+    expect(after.spec.scenes[0].media.made).toMatchObject({ kind: "video" });
+    const keyframeJob = harness.fake.requests.find((r) => r.path === "/v1/media/queue" && String((r.body as { prompt?: string }).prompt).includes("reference sheet"));
+    expect(keyframeJob, "a keyframe drawn from the cast sheet").toBeTruthy();
+
+    const production = await api.ok<{ items: Array<{ target: string; status: string }> }>("GET", `/creations/${creation.id}/production`);
+    expect(production.items.some((i) => i.target === "cast:c1" && i.status === "done")).toBe(true);
+    expect(production.items.some((i) => i.target?.endsWith(":keyframe"))).toBe(true);
+
+    // A chat message is turned into edits and saved; the reply comes back with the changes.
+    const chat = await api.ok<{ reply: string; changes: string[]; creation: { id: string } }>("POST", `/creations/${creation.id}/chat`, { message: "Make the colours warmer" });
+    expect(chat.reply).toBeTruthy();
+    expect(Array.isArray(chat.changes)).toBe(true);
+    expect(chat.creation.id).toBe(creation.id);
   });
 });

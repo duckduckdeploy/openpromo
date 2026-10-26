@@ -5,7 +5,7 @@
 <p align="center">
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-22c55e?style=for-the-badge" alt="MIT licence"></a>
   <a href="#-self-host-with-docker"><img src="https://img.shields.io/badge/self--host-Docker-2496ED?style=for-the-badge&logo=docker&logoColor=white" alt="Self-host with Docker"></a>
-  <a href="https://openpromo.gg/docs/mcp"><img src="https://img.shields.io/badge/MCP-18%20tools-7c3aed?style=for-the-badge" alt="18 MCP tools"></a>
+  <a href="https://openpromo.gg/docs/mcp"><img src="https://img.shields.io/badge/MCP-20%20tools-7c3aed?style=for-the-badge" alt="20 MCP tools"></a>
   <a href="https://openpromo.gg"><img src="https://img.shields.io/badge/openpromo.gg-live-c93a1f?style=for-the-badge" alt="openpromo.gg"></a>
 </p>
 
@@ -45,10 +45,13 @@ Open source and self-hostable. Bring your own [YepAPI](https://yepapi.com?ref=op
 
 - 🧠 **It knows your business first.** One read of your website gives every tool the same brief: your selling points (each with the sentence and page it came from), audience, voice, colours, fonts, logo, products and getting-started steps. You edit it once; edits survive the next read.
 - ✅ **No made-up claims.** Before anything renders, checks flag figures that are not on your site, hype words, text that is too long to read in time, a missing hook or a missing call to action.
-- 🔤 **Real text, never garbled.** Words are set as real text in your brand's fonts. AI models only make what they are good at: backdrop photos, B-roll, voiceover and music.
+- 🎞️ **43 templates to start from.** UGC reviews with people talking to camera, 3D mascot skits, comic stories, claymation, cinematic product films, kinetic type, screen demos and more. Each one is filled in from your website, with an [example for every template](https://openpromo.gg/templates).
+- 🏆 **Models picked by testing.** 18 image, 17 video and 16 voice models were tried on the same prompts. The defaults are the best for the price: GPT Image 2, Veo 3.1 Lite, Grok Imagine Video, ElevenLabs v4 and Lyria 3.
+- 🔤 **Real text, never garbled.** Titles and captions are real text in your brand's fonts. Characters stay the same from scene to scene: each is drawn once as a reference sheet.
+- 💬 **Change it by chat.** "Make it blue", "the owl wears a red scarf", "shorter voiceover": only what the change touches is made again.
 - 🔓 **Open source, all of it.** The app, the API, the renderer and the agent server are MIT licensed.
 - 💸 **No surprise bills.** Pay YepAPI per use with your own key. Generated pieces are kept, so re-rendering after an edit only pays for what is new.
-- 🤖 **Agents included.** 18 MCP tools, a REST API and a Claude plugin with ready-made skills.
+- 🤖 **Agents included.** 20 MCP tools, a REST API and a Claude plugin with ready-made skills.
 
 ## 🧰 What you can make
 
@@ -60,6 +63,10 @@ Open source and self-hostable. Bring your own [YepAPI](https://yepapi.com?ref=op
   <tr>
     <td>🎨 Brand profile</td>
     <td>Read from your site with headless Chrome: identity, audience, selling points with source quotes, voice, colours (including your logo's), fonts, logo, products, getting-started flows, screenshots of every page read</td>
+  </tr>
+  <tr>
+    <td>🎞️ Templates</td>
+    <td>43 tested styles for images, carousels, reels, promo videos and tutorials, grouped as real people, characters and mascots, illustrated and comic, cinematic and product, motion type and product screens. Each shows an example, when to use it and the typical price</td>
   </tr>
   <tr>
     <td>💡 Post ideas</td>
@@ -120,7 +127,7 @@ The [self-hosting guide](https://openpromo.gg/docs/self-hosting) covers servers,
 
 ## 🤖 Connect your AI agent
 
-The MCP server gives agents the whole workflow as 18 tools: read and edit the brand, write ideas, write and edit creations, render, and fetch the files. Paid tools say what they cost.
+The MCP server gives agents the whole workflow as 20 tools: read and edit the brand, browse templates, write ideas, write creations and edit them by chat, render, and fetch the files. Paid tools say what they cost.
 
 **ChatGPT and Claude (web and desktop):** add a custom connector with the URL `{API_URL}/mcp` and OAuth sign-in. You sign in with your OpenPromo account and approve; no key needed.
 

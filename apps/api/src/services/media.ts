@@ -1,5 +1,5 @@
 import { createHash } from "node:crypto";
-import { DEFAULT_MEDIA_MODELS, mediaModel, runMediaJob, type MediaKind, type MediaOptions } from "@openpromo/yepapi";
+import { DEFAULT_MEDIA_MODELS, isYepApiError, mediaModel, runMediaJob, type MediaKind, type MediaOptions } from "@openpromo/yepapi";
 import { and, desc, eq } from "drizzle-orm";
 import { dataDb, schema } from "../db";
 import type { AssetKind, AssetRole } from "../db/data-schema";
@@ -61,6 +61,9 @@ async function loadReferences(projectId: string, ids: string[]): Promise<Buffer[
 }
 
 /** Makes (or reuses) one generated asset. Throws on failure; failed jobs are not billed. */
+const isUpstreamFailure = (error: unknown) =>
+  isYepApiError(error) && error.code === "MEDIA_JOB_FAILED" && /upstream data provider error|internal error|temporarily unavailable|try again/i.test(error.message);
+
 export async function generateAsset(request: GenerateRequest): Promise<Asset> {
   const model = request.model ?? DEFAULT_MEDIA_MODELS[request.kind];
   const key = cacheKey(request, model);
@@ -114,17 +117,31 @@ export async function generateAsset(request: GenerateRequest): Promise<Asset> {
       : request.referenceSize && references.length === 1
         ? await firstFrame(references[0]!, request.referenceSize)
         : await referenceSheet(references);
-    const result = await runMediaJob(
-      yep,
-      { model, prompt: request.prompt, options: request.options, imageData },
-      {
-        jobId: open?.yepJobId ?? undefined,
-        pollMs: request.kind === "video" ? 5000 : 2000,
-        onSubmitted: async (jobId) => {
-          await dataDb.update(schema.mediaJobs).set({ yepJobId: jobId }).where(eq(schema.mediaJobs.id, job!.id));
+    const run = (jobId?: string) =>
+      runMediaJob(
+        yep,
+        { model, prompt: request.prompt, options: request.options, imageData },
+        {
+          jobId,
+          pollMs: request.kind === "video" ? 5000 : 2000,
+          // Busy video queues can hold a clip for 20 minutes or more before it starts.
+          timeoutMs: (request.kind === "video" ? 45 : 15) * 60_000,
+          onSubmitted: async (id) => {
+            await dataDb.update(schema.mediaJobs).set({ yepJobId: id }).where(eq(schema.mediaJobs.id, job!.id));
+          },
         },
-      },
-    );
+      );
+    let result: Awaited<ReturnType<typeof runMediaJob>>;
+    for (let attempt = 0; ; attempt++) {
+      try {
+        result = await run(attempt === 0 ? (open?.yepJobId ?? undefined) : undefined);
+        break;
+      } catch (error) {
+        // "Upstream data provider error" is the model's provider failing, not the request: it is
+        // not billed, and a new submit usually works. Safety refusals and bad requests fail at once.
+        if (attempt >= 2 || !isUpstreamFailure(error)) throw error;
+      }
+    }
     if (!result.file) throw new Error("The model returned no file");
     const asset = await saveAsset({
       projectId: request.projectId,

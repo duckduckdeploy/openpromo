@@ -44,12 +44,18 @@ export const MCP_TOOLS: McpTool[] = [
     does: 'Write new post ideas from the brand profile, by goal, channel and type, each with the selling points it uses.',
     cost: 'About $0.02 – $0.06',
   },
+  {
+    name: 'list_templates',
+    group: 'Creations and renders',
+    does: 'The template gallery: styles for every kind of post and video, with when to use each, its structure, typical price and an example.',
+    cost: 'Free',
+  },
   { name: 'list_creations', group: 'Creations and renders', does: 'Images, carousels, reels, promo videos and tutorials, with status and latest render.', cost: 'Free' },
   {
     name: 'create_creation',
     group: 'Creations and renders',
-    does: 'Write a new image, carousel, reel, promo video or tutorial from an idea or a brief. Returns scenes and checks; nothing is rendered yet.',
-    cost: 'About $0.03 – $0.08',
+    does: 'Write a new image, carousel, reel, promo video or tutorial from a template, an idea or a brief. Returns scenes and checks; nothing is rendered yet.',
+    cost: 'About $0.03 – $0.10',
   },
   { name: 'get_creation', group: 'Creations and renders', does: 'A creation’s scenes, post caption, checks and renders.', cost: 'Free' },
   {
@@ -59,10 +65,16 @@ export const MCP_TOOLS: McpTool[] = [
     cost: 'Free',
   },
   {
+    name: 'chat_edit_creation',
+    group: 'Creations and renders',
+    does: 'Change a creation in plain words, such as "make it blue" or "the owl wears glasses". Only what the change touches is made again on the next render.',
+    cost: 'About $0.01',
+  },
+  {
     name: 'render_creation',
     group: 'Creations and renders',
     does: 'Render a creation to files in the background, at its own size or another one; poll get_render.',
-    cost: 'Images $0 unless AI pictures are used ($0.04 – $0.20 each). Videos: voice about $0.01 a scene, music $0.08, AI clips about $0.11 a second',
+    cost: 'Images $0 unless AI pictures are used ($0.04 – $0.20 each). Videos: voice about $0.01 a scene, music $0.08, AI clips about $0.11 – $0.30 a second',
   },
   { name: 'get_render', group: 'Creations and renders', does: 'A render’s status and progress, and when done its output, thumbnail and caption file ids.', cost: 'Free' },
   {

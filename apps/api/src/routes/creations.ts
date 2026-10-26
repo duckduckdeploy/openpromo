@@ -1,5 +1,5 @@
 import { checkCreation, imageDocument } from "@openpromo/render";
-import { CREATION_TYPES, creationSpec, FORMAT_KEYS, IDEA_GOALS, type CreationType, type IdeaGoal, type MediaFormat } from "@openpromo/shared";
+import { CREATION_TYPES, creationSpec, estimateTemplateUsd, FORMAT_KEYS, getTemplate, IDEA_GOALS, RECIPES, TEMPLATE_GROUPS, TEMPLATE_PREVIEWS, TEMPLATES, type CreationType, type IdeaGoal, type MediaFormat } from "@openpromo/shared";
 import { and, desc, eq, inArray } from "drizzle-orm";
 import type { FastifyInstance } from "fastify";
 import { z } from "zod";
@@ -9,6 +9,8 @@ import { requireProject, requireUser } from "../lib/context";
 import { badRequest, conflict, notFound, parse, uuidParam } from "../lib/errors";
 import { env } from "../env";
 import { getYep } from "../lib/yep";
+import { backfillRecipes, chatEdit } from "../services/chat-editor";
+import { writeFromTemplate } from "../services/template-writer";
 import { writeCreation, writeIdeas, type AssetSummary } from "../services/writer";
 
 type Project = typeof schema.projects.$inferSelect;
@@ -144,6 +146,16 @@ export async function creationRoutes(app: FastifyInstance) {
     };
   });
 
+  // The template gallery: every template with its recipe and preview media. Public, no account needed.
+  app.get("/templates", async () => ({
+    ok: true,
+    data: {
+      groups: TEMPLATE_GROUPS,
+      recipes: RECIPES,
+      templates: TEMPLATES.map((t) => ({ ...t, estimateUsd: estimateTemplateUsd(t), previews: TEMPLATE_PREVIEWS[t.id] ?? [] })),
+    },
+  }));
+
   // Writes a new creation from an idea or a brief. Takes 10–30 seconds (one writing call).
   app.post<{ Params: { projectId: string } }>("/projects/:projectId/creations", async (request, reply) => {
     const user = await requireUser(request);
@@ -157,10 +169,15 @@ export async function creationRoutes(app: FastifyInstance) {
         brief: z.string().max(4000).optional(),
         voice: z.boolean().default(true),
         allowGenerated: z.boolean().default(true),
+        /** A gallery template (GET /templates). Without one, the writer picks a structure itself. */
+        templateId: z.string().max(60).optional(),
       }),
       request.body,
     );
-    const formats = CREATION_TYPES[input.type].formats as readonly MediaFormat[];
+    const template = input.templateId ? getTemplate(input.templateId) : undefined;
+    if (input.templateId && !template) throw badRequest(`No template called ${input.templateId}.`);
+    if (template && template.type !== input.type) throw badRequest(`${template.name} makes a ${CREATION_TYPES[template.type].label.toLowerCase()}.`);
+    const formats = (template?.formats ?? CREATION_TYPES[input.type].formats) as readonly MediaFormat[];
     const format = input.format ?? formats[0]!;
     if (!formats.includes(format)) throw badRequest(`A ${CREATION_TYPES[input.type].label.toLowerCase()} can be ${formats.join(", ")}.`);
     let brief = input.brief?.trim() ?? "";
@@ -170,10 +187,11 @@ export async function creationRoutes(app: FastifyInstance) {
       if (!idea) throw notFound("Idea");
       brief = `${idea.title}. Hook: ${idea.hook}. ${idea.body} CTA: ${idea.cta ?? ""}. Selling points: ${idea.pointIds.join(", ")}. ${brief}`;
     }
-    if (!brief) throw badRequest("Give a brief or pick an idea.");
+    if (!brief && !template) throw badRequest("Give a brief, pick an idea or pick a template.");
 
     const yep = await getYep({ userId: user.id, projectId: project.id, feature: `write.${input.type}` });
-    const written = await writeCreation(yep, { brand, type: input.type, format, assets: await assetSummaries(project.id), brief, voice: input.voice, allowGenerated: input.allowGenerated });
+    const draft = { brand, type: input.type, format, assets: await assetSummaries(project.id), brief, voice: input.voice, allowGenerated: input.allowGenerated };
+    const written = template ? await writeFromTemplate(yep, { ...draft, templateId: template.id }) : await writeCreation(yep, draft);
     const checks = checkCreation({ type: input.type, spec: written.spec, brand, pages: await pageTexts(project.id) });
     const caption = idea && !written.caption.trim() ? `${idea.caption}\n\n${idea.hashtags.map((h) => `#${h}`).join(" ")}` : written.caption;
     const [creation] = await dataDb
@@ -189,6 +207,62 @@ export async function creationRoutes(app: FastifyInstance) {
     const { creation } = await requireCreation(user.id, request.params.creationId);
     const renders = await dataDb.select().from(schema.renders).where(eq(schema.renders.creationId, creation.id)).orderBy(desc(schema.renders.createdAt)).limit(20);
     return { ok: true, data: { ...creation, renders } };
+  });
+
+  // Edits by chat: "make it blue", "the owl should wear a red scarf". The model turns the message
+  // into edits; only the pictures and clips they touch are made again on the next render.
+  app.post<{ Params: { creationId: string } }>("/creations/:creationId/chat", async (request) => {
+    const user = await requireUser(request);
+    const { creation, project } = await requireCreation(user.id, request.params.creationId);
+    const brand = readyBrand(project);
+    const input = parse(
+      z.object({
+        message: z.string().trim().min(1).max(2000),
+        history: z.array(z.object({ role: z.enum(["user", "assistant"]), text: z.string().max(4000) })).max(20).default([]),
+      }),
+      request.body,
+    );
+    const yep = await getYep({ userId: user.id, projectId: project.id, feature: "write.chat" });
+    const spec = creationSpec.parse(creation.spec);
+    const made = await dataDb
+      .select({ target: schema.mediaJobs.target, kind: schema.mediaJobs.kind, model: schema.mediaJobs.model, prompt: schema.mediaJobs.prompt, assetId: schema.mediaJobs.assetId, params: schema.mediaJobs.params })
+      .from(schema.mediaJobs)
+      .where(and(eq(schema.mediaJobs.creationId, creation.id), eq(schema.mediaJobs.status, "done")))
+      .orderBy(desc(schema.mediaJobs.createdAt));
+    backfillRecipes(spec, made);
+    const result = await chatEdit(yep, { brand, spec, message: input.message, history: input.history });
+    const checks = checkCreation({ type: creation.type, spec: result.spec, brand, pages: await pageTexts(project.id) });
+    const [updated] = await dataDb.update(schema.creations).set({ spec: result.spec, checks, updatedAt: new Date() }).where(eq(schema.creations.id, creation.id)).returning();
+    return { ok: true, data: { reply: result.reply, changes: result.changes, estimateUsd: result.estimateUsd, creation: updated }, costUsd: result.costUsd };
+  });
+
+  // Everything being made for a creation, newest attempt per target: cast sheets, keyframes, clips,
+  // voice lines and music. The production view polls this while a render runs.
+  app.get<{ Params: { creationId: string } }>("/creations/:creationId/production", async (request) => {
+    const user = await requireUser(request);
+    const { creation } = await requireCreation(user.id, request.params.creationId);
+    const jobs = await dataDb
+      .select({
+        id: schema.mediaJobs.id,
+        target: schema.mediaJobs.target,
+        kind: schema.mediaJobs.kind,
+        model: schema.mediaJobs.model,
+        prompt: schema.mediaJobs.prompt,
+        status: schema.mediaJobs.status,
+        assetId: schema.mediaJobs.assetId,
+        costUsd: schema.mediaJobs.costUsd,
+        error: schema.mediaJobs.error,
+        createdAt: schema.mediaJobs.createdAt,
+        finishedAt: schema.mediaJobs.finishedAt,
+      })
+      .from(schema.mediaJobs)
+      .where(eq(schema.mediaJobs.creationId, creation.id))
+      .orderBy(desc(schema.mediaJobs.createdAt))
+      .limit(200);
+    const latest = new Map<string, (typeof jobs)[number]>();
+    for (const job of jobs) if (!latest.has(job.target ?? job.id)) latest.set(job.target ?? job.id, job);
+    const items = [...latest.values()].sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime()).map((j) => ({ ...j, prompt: j.prompt.slice(0, 240) }));
+    return { ok: true, data: { items, spentUsd: Math.round(jobs.reduce((sum, j) => sum + (j.costUsd ?? 0), 0) * 10_000) / 10_000 } };
   });
 
   // Saves edits (text, layouts, pictures, timing, audio). The checks run again on every save.
@@ -241,11 +315,14 @@ export async function creationRoutes(app: FastifyInstance) {
   app.post<{ Params: { creationId: string } }>("/creations/:creationId/renders", async (request, reply) => {
     const user = await requireUser(request);
     const { creation, project } = await requireCreation(user.id, request.params.creationId);
-    readyBrand(project);
+    const brand = readyBrand(project);
     const input = parse(z.object({ format: z.enum(FORMATS).optional(), quality: z.enum(["draft", "final"]).default("final") }), request.body ?? {});
     const format = input.format ?? creation.format;
     if (!(CREATION_TYPES[creation.type].formats as readonly string[]).includes(format)) throw badRequest(`This ${creation.type} cannot be ${format}.`);
-    const errors = creation.checks.filter((c) => c.level === "error");
+    // Checked again here: the saved checks may predate a brand edit or a change in the rules.
+    const checks = checkCreation({ type: creation.type, spec: creationSpec.parse(creation.spec), brand, pages: await pageTexts(project.id) });
+    await dataDb.update(schema.creations).set({ checks }).where(eq(schema.creations.id, creation.id));
+    const errors = checks.filter((c) => c.level === "error");
     if (errors.length) throw badRequest(`Fix these first: ${errors.map((e) => e.message).join(" ")}`, { checks: errors });
     const [active] = await dataDb.select({ id: schema.renders.id }).from(schema.renders).where(and(eq(schema.renders.creationId, creation.id), inArray(schema.renders.status, ["queued", "running"]))).limit(1);
     if (active) throw conflict("This creation is already rendering.");

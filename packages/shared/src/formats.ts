@@ -14,7 +14,7 @@ export const FORMAT_KEYS = Object.keys(MEDIA_FORMATS) as MediaFormat[];
 
 /** What a creation is. Images and carousels render to pictures; the rest to video. */
 export const CREATION_TYPES = {
-  image: { label: "Image", video: false, formats: ["square", "portrait", "story", "link", "x_header", "linkedin_banner"] },
+  image: { label: "Image", video: false, formats: ["square", "portrait", "story", "landscape", "link", "x_header", "linkedin_banner"] },
   carousel: { label: "Carousel", video: false, formats: ["square", "portrait"] },
   reel: { label: "Reel", video: true, formats: ["story"] },
   promo: { label: "Promo video", video: true, formats: ["landscape", "square", "story"] },

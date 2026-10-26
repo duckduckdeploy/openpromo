@@ -8,23 +8,41 @@ import { z } from "zod";
  * An image has one scene, a carousel one per slide, and a video one per shot.
  */
 
-/** A picture or clip in a scene: an existing asset, or one still to be generated. */
-export const mediaRef = z.object({
-  assetId: z.string().nullable().default(null),
-  /** Set while the asset is still to be made; cleared once assetId points at the result. */
-  generate: z
-    .object({
+export const CAMERA_MOVES = ["none", "push-in", "pull-out", "pan-left", "pan-right", "pan-up", "pan-down"] as const;
+export type CameraMove = (typeof CAMERA_MOVES)[number];
+
+/** How a picture or clip is (or was) made. */
+const generateSpec = z.object({
       kind: z.enum(["image", "video"]),
       prompt: z.string().max(2000),
       model: z.string().max(120).nullable().default(null),
       /** Video only: animate this picture (it becomes the first frame) instead of starting from words. */
       sourceAssetId: z.string().nullable().default(null),
-    })
-    .nullable()
-    .default(null),
+      /** Video only: draw this first frame before animating it (when sourceAssetId is empty). */
+      keyframe: z.string().max(2000).nullable().default(null),
+      /** Cast members (spec.cast ids) whose sheets are passed as the reference, so they look the same in every scene. */
+      castIds: z.array(z.string().max(40)).max(4).default([]),
+      /** Other references for the picture or keyframe, such as the product photo. */
+      referenceAssetIds: z.array(z.string()).max(3).default([]),
+      /** Picture only: the model may draw lettering (designed posters); the words are checked afterwards. */
+      allowText: z.boolean().default(false),
+});
+export type GenerateSpec = z.infer<typeof generateSpec>;
+
+/** A picture or clip in a scene: an existing asset, or one still to be generated. */
+export const mediaRef = z.object({
+  assetId: z.string().nullable().default(null),
+  /** Set while the asset is still to be made; cleared once assetId points at the result. */
+  generate: generateSpec.nullable().default(null),
+  /** The recipe of the asset in assetId once made, so an edit can make it again differently. */
+  made: generateSpec.nullable().default(null),
   fit: z.enum(["cover", "contain"]).default("cover"),
   /** For screenshots: where to zoom, as fractions of the image (0–1). */
   focus: z.object({ x: z.number(), y: z.number(), zoom: z.number().min(1).max(4) }).nullable().default(null),
+  /** Video only: play the clip's own sound (speech and lip-sync for on-camera scenes, natural sound for close-ups). */
+  keepAudio: z.boolean().default(false),
+  /** Video only: a camera move over a still picture. */
+  motion: z.enum(CAMERA_MOVES).default("none"),
 });
 export type MediaRef = z.infer<typeof mediaRef>;
 
@@ -52,6 +70,8 @@ export const SCENE_LAYOUTS = [
   "split",
   "offer",
   "cta",
+  /** The picture or clip fills the frame; any text is a short overlay. */
+  "full",
 ] as const;
 export type SceneLayout = (typeof SCENE_LAYOUTS)[number];
 
@@ -72,6 +92,8 @@ export const scene = z.object({
   pointIds: z.array(z.string()).default([]),
   /** Video only: words from the narration that captions show in the accent colour. */
   emphasis: z.array(z.string().max(40)).max(4).default([]),
+  /** Video only: what the person in the clip says on camera (the clip's own audio). Captions use it. */
+  dialogue: z.string().max(600).default(""),
 });
 export type Scene = z.infer<typeof scene>;
 
@@ -99,8 +121,21 @@ export const captionStyle = z.object({
 });
 export type CaptionStyle = z.infer<typeof captionStyle>;
 
+/** A character or person who appears in several scenes. The sheet is drawn once and reused as a reference. */
+export const castMember = z.object({
+  id: z.string().max(40),
+  name: z.string().max(80),
+  /** How they look, in enough detail to draw them the same way every time. */
+  description: z.string().max(1000),
+  sheetAssetId: z.string().nullable().default(null),
+});
+export type CastMember = z.infer<typeof castMember>;
+
 export const creationSpec = z.object({
   version: z.literal(1).default(1),
+  /** The gallery template this was written from (templates/). */
+  templateId: z.string().max(60).nullable().default(null),
+  cast: z.array(castMember).max(4).default([]),
   /** Visual style the scenes are drawn in (templates in @openpromo/render). */
   style: z.string().max(40).default("clean"),
   /** Optional colour overrides on top of the brand's. */

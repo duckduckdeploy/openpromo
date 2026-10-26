@@ -189,7 +189,7 @@ export const features: Feature[] = [
     ],
     capabilitiesTitle: 'AI Instagram post generator features',
     capabilities: [
-      { title: 'Real text, never drawn by AI', body: 'Headlines are real text set in your brand fonts, so there is no garbled lettering. AI only makes backdrop pictures, when you want one.' },
+      { title: 'Real text, never drawn by AI', body: 'Headlines are real text set in your brand fonts, so there is no garbled lettering. AI makes the pictures, and only designed-poster templates let it draw letters, which are checked.' },
       { title: 'Text that always fits', body: 'A fit pass shrinks text until nothing overflows, in every format.' },
       { title: 'Readable colors', body: 'Color pairs below WCAG AA contrast are fixed automatically.' },
       { title: 'Every feed size', body: 'Square 1:1 and portrait 4:5 for the feed, story 9:16, and the same post for Facebook and LinkedIn.' },

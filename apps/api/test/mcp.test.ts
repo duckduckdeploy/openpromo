@@ -41,7 +41,7 @@ describe("MCP server", () => {
     const tools = body.result.tools as { name: string; annotations?: { readOnlyHint?: boolean } }[];
     const names = tools.map((t) => t.name);
     // The README and the site quote this number.
-    expect(names).toHaveLength(18);
+    expect(names).toHaveLength(20);
     expect(names).toEqual(expect.arrayContaining(["whoami", "get_balance", "get_usage", "list_projects", "create_project", "get_brand", "update_brand", "refresh_brand", "update_project_context"]));
     for (const name of ["whoami", "get_balance", "list_projects", "get_brand"]) expect(tools.find((t) => t.name === name)?.annotations?.readOnlyHint, name).toBe(true);
     expect(tools.find((t) => t.name === "refresh_brand")?.annotations?.readOnlyHint).toBe(false);

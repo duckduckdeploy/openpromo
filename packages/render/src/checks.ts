@@ -58,7 +58,7 @@ export function checkCreation(input: { type: CreationType; spec: CreationSpec; b
     const label = `Scene ${i + 1}`;
     const visible = [scene.text.eyebrow, scene.text.headline, scene.text.body, scene.text.stat, scene.text.cta, ...scene.text.bullets].join(" ");
 
-    if (!scene.text.headline.trim() && !["screenshot", "product"].includes(scene.layout) && !(scene.layout === "offer" && scene.text.stat)) {
+    if (!scene.text.headline.trim() && !["screenshot", "product", "full"].includes(scene.layout) && !(scene.layout === "offer" && scene.text.stat)) {
       checks.push({ id: "headline-missing", level: "error", message: `${label} has no headline.`, target });
     }
     if (["screenshot", "product", "split"].includes(scene.layout) && !scene.media?.assetId && !scene.media?.generate) {
@@ -69,7 +69,7 @@ export function checkCreation(input: { type: CreationType; spec: CreationSpec; b
     }
 
     for (const phrase of avoid) {
-      if (phrase && new RegExp(`\\b${phrase.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\b`, "i").test(`${visible} ${scene.narration}`)) {
+      if (phrase && new RegExp(`\\b${phrase.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\b`, "i").test(`${visible} ${scene.narration} ${scene.dialogue}`)) {
         checks.push({ id: "generic-phrase", level: "warning", message: `${label} says “${phrase}”, which reads as generic or off-brand. Say what it actually does.`, target });
       }
     }
@@ -78,7 +78,7 @@ export function checkCreation(input: { type: CreationType; spec: CreationSpec; b
       if (!pointIds.has(id)) checks.push({ id: "point-unknown", level: "error", message: `${label} refers to a selling point that is not in the brand profile.`, target });
     }
     // A figure on screen should come from the site; invented numbers are the riskiest claims.
-    for (const figure of `${visible} ${scene.narration}`.match(FIGURE) ?? []) {
+    for (const figure of `${visible} ${scene.narration} ${scene.dialogue}`.match(FIGURE) ?? []) {
       if (!source.includes(normaliseFigure(figure))) {
         checks.push({ id: "figure-unverified", level: "warning", message: `${label} says “${figure.trim()}”, which is not on the website. Check it is true.`, target });
       }
@@ -99,7 +99,7 @@ export function checkCreation(input: { type: CreationType; spec: CreationSpec; b
 
   if (isVideo) {
     const first = spec.scenes[0];
-    if (first && !first.text.headline.trim() && !first.narration.trim()) {
+    if (first && !first.text.headline.trim() && !first.narration.trim() && !first.dialogue.trim()) {
       checks.push({ id: "hook-missing", level: "error", message: "The first scene needs a hook: a headline or a spoken line in the first two seconds.", target: first.id });
     }
     const last = spec.scenes.at(-1);

@@ -17,7 +17,10 @@ import { ArrowDown, ArrowUp, ChevronLeft, CircleAlert, Copy, Download, Plus, Pla
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { ChatPanel } from "@/components/chat-panel";
 import { MediaPicker } from "@/components/media-picker";
+import { ProductionBoard } from "@/components/production-board";
+import { Storyboard } from "@/components/storyboard";
 import { CreationStatusBadge, FormatFrame, formatDuration, ProgressBar } from "@/components/media";
 import { Badge, Button, Card, CardHeader, cx, ErrorNote, Field, Input, Select, Spinner, Textarea } from "@/components/ui";
 import { api, dateTime } from "@/lib/api";
@@ -34,6 +37,7 @@ const LAYOUT_LABELS: Record<(typeof SCENE_LAYOUTS)[number], string> = {
   split: "Picture + text",
   offer: "Offer",
   cta: "Call to action",
+  full: "Full-frame picture",
 };
 
 /** Renders the saved scene's HTML in a sandboxed frame, scaled to the column width. */
@@ -127,6 +131,7 @@ function newScene(isVideo: boolean): Scene {
     text: { eyebrow: "", headline: "New scene", body: "", stat: "", bullets: [], cta: "", attribution: "" },
     media: null,
     background: null,
+    dialogue: "",
     durationMs: isVideo ? 3000 : 3000,
     narration: "",
     transition: "fade",
@@ -255,6 +260,16 @@ export default function CreationEditor() {
       {save.error && <ErrorNote error={save.error} />}
       <ChecksBar checks={c.checks} />
 
+      {/* Template scripts are read and approved first; nothing is paid for until then. */}
+      {spec.templateId && c.renders.length === 0 && (
+        <Card className="mb-6">
+          <CardHeader title="Your script" description="Read it through. Change anything below or by chat, then approve to start making it." />
+          <div className="px-4 pb-4">
+            <Storyboard spec={spec} approving={render.isPending} disabled={busy || errors.length > 0 || save.isPending} onApprove={() => render.mutate(renderFormat ?? c.format)} />
+          </div>
+        </Card>
+      )}
+
       <div className="grid gap-6 xl:grid-cols-[220px_minmax(0,1fr)_380px]">
         {/* Scenes */}
         {multiScene && (
@@ -332,6 +347,27 @@ export default function CreationEditor() {
                 </a>
               ))}
             </div>
+          )}
+          <Card>
+            <CardHeader title="Change it by chat" description="Say what to change. Only the parts it touches are made again." />
+            <div className="px-4 pb-4">
+              <ChatPanel
+                creationId={c.id}
+                onApplied={(next, updated) => {
+                  setSpec(creationSpec.parse(structuredClone(next)));
+                  queryClient.setQueryData(["creation", creationId], (old: (Creation & { renders: Render[] }) | undefined) => (old ? { ...old, ...updated } : old));
+                  setVersion((v) => v + 1);
+                }}
+              />
+            </div>
+          </Card>
+          {(c.renders.length > 0 || spec.templateId) && (
+            <Card>
+              <CardHeader title="Production" description="Every picture, clip and sound as it is made. Finished ones are reused on the next render." />
+              <div className="px-4 pb-4">
+                <ProductionBoard creationId={c.id} scenes={spec.scenes} cast={spec.cast} live={c.renders.some((r) => r.status === "queued" || r.status === "running")} />
+              </div>
+            </Card>
           )}
           <Card>
             <CardHeader title="Renders" description={isVideo ? "Each render makes any missing pictures, voice and music first; those are reused next time." : undefined} />

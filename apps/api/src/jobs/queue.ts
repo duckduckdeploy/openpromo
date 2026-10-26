@@ -70,6 +70,8 @@ export async function startWorker(log: FastifyBaseLogger) {
     });
   }
   await b.schedule("maintenance.cleanup", "*/15 * * * *");
+  const { resumeInterruptedRenders } = await import("./render");
+  await resumeInterruptedRenders(log);
   log.info("worker started");
 }
 

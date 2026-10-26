@@ -1,6 +1,6 @@
-import { MEDIA_FORMATS, type BrandProfile, type CreationSpec, type MediaFormat } from "@openpromo/shared";
+import { MEDIA_FORMATS, type BrandProfile, type CameraMove, type CreationSpec, type MediaFormat } from "@openpromo/shared";
 import { captionLayer, captionPreset } from "./caption-styles";
-import { esc, lookOf, SCENE_CSS, sceneHtml, shapeOf, type SceneContext } from "./layouts";
+import { backdropOf, esc, lookOf, SCENE_CSS, sceneHtml, shapeOf, type SceneContext } from "./layouts";
 import { googleFontsHref, themeCss } from "./theme";
 
 /**
@@ -117,6 +117,17 @@ export type VideoInput = DocumentInput & {
   sceneDurations: number[];
 };
 
+/** GSAP from/to states for camera moves over a still. Pans need some zoom so the edges never show. */
+const CAMERA_TWEENS: Record<CameraMove, [string, string]> = {
+  none: ["{ scale: 1 }", "{ scale: 1.08 }"],
+  "push-in": ["{ scale: 1 }", "{ scale: 1.16 }"],
+  "pull-out": ["{ scale: 1.16 }", "{ scale: 1 }"],
+  "pan-left": ["{ scale: 1.14, xPercent: 5 }", "{ scale: 1.14, xPercent: -5 }"],
+  "pan-right": ["{ scale: 1.14, xPercent: -5 }", "{ scale: 1.14, xPercent: 5 }"],
+  "pan-up": ["{ scale: 1.14, yPercent: 5 }", "{ scale: 1.14, yPercent: -5 }"],
+  "pan-down": ["{ scale: 1.14, yPercent: -5 }", "{ scale: 1.14, yPercent: 5 }"],
+};
+
 const secs = (ms: number) => (Math.round(ms) / 1000).toFixed(3);
 
 /**
@@ -137,7 +148,8 @@ export function videoDocument(input: VideoInput): string {
     const start = input.sceneStarts[i] ?? 0;
     const duration = input.sceneDurations[i] ?? scene.durationMs;
     const timing = `data-start="${secs(start)}" data-duration="${secs(duration)}"`;
-    const bg = scene.background?.assetId ? input.assets.files[scene.background.assetId] : undefined;
+    const backdrop = backdropOf(scene);
+    const bg = backdrop?.assetId ? input.assets.files[backdrop.assetId] : undefined;
     if (bg && lookOf(ctx, scene) === "photo") {
       const id = `bg-${i}`;
       clips.push(
@@ -145,8 +157,11 @@ export function videoDocument(input: VideoInput): string {
           ? `<video id="${id}" class="clip backdrop" ${timing} data-track-index="0" src="${esc(bg.path)}" muted playsinline></video>`
           : `<img id="${id}" class="clip backdrop" ${timing} data-track-index="0" src="${esc(bg.path)}" alt="">`,
       );
-      // A slow push-in keeps stills alive (a "Ken Burns" move); clips move on their own.
-      if (!bg.video) tl.push(`tl.fromTo("#${id}", { scale: 1 }, { scale: 1.08, duration: ${secs(duration)}, ease: "none" }, ${secs(start)});`);
+      // Stills get a camera move (a slow push-in unless the scene names one); clips move on their own.
+      if (!bg.video) {
+        const [from, to] = CAMERA_TWEENS[backdrop?.motion ?? "none"];
+        tl.push(`tl.fromTo("#${id}", ${from}, { ...${to}, duration: ${secs(duration)}, ease: "sine.inOut" }, ${secs(start)});`);
+      }
     }
     clips.push(sceneHtml(ctx, scene, ` id="scene-${i}" ${timing} data-track-index="1"`, `clip ${reserve}`));
     const t0 = start / 1000;

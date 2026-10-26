@@ -1,4 +1,4 @@
-import { brandProfile, type BrandProfile } from "@openpromo/shared";
+import { brandProfile, luminance, type BrandProfile } from "@openpromo/shared";
 import type { YepApi } from "@openpromo/yepapi";
 import { and, eq, lt } from "drizzle-orm";
 import type { HTTPResponse } from "puppeteer";
@@ -330,7 +330,10 @@ export async function ingestProject(project: Project): Promise<void> {
       fonts: { heading: visual?.heading ?? { family: "Inter", google: true }, body: visual?.body ?? { family: "Inter", google: true } },
       logoAssetId,
       radius: visual?.radius ?? 12,
-      imageryStyle: extracted.imageryStyle.slice(0, 8),
+      // Below 0.18 white text reads better than black: a dark site.
+      theme: luminance(visual?.colors.background ?? "#ffffff") < 0.18 ? "dark" : "light",
+      typography: extracted.typography.slice(0, 240),
+      imageryStyle: extracted.imageryStyle.slice(0, 8).map((tag) => tag.slice(0, 60)),
     },
     products: extracted.products.slice(0, 24).map((p) => {
       const json = jsonProducts.find((j) => j.name.toLowerCase() === p.name.toLowerCase());

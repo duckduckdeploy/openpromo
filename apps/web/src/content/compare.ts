@@ -51,7 +51,7 @@ const GROUNDED = {
 };
 const REAL_TEXT = {
   title: 'Real text, never drawn by AI',
-  body: 'Headlines and captions are real text in your brand fonts, rendered from templates. AI only makes backdrop pictures, B-roll, voice and music, so there is no garbled lettering.',
+  body: 'Headlines and captions are real text in your brand fonts, rendered from templates, so there is no garbled lettering. AI makes the pictures, clips, characters, voice and music.',
 };
 const AGENTS = {
   title: 'Made for agents too',

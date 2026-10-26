@@ -45,6 +45,7 @@ export const extractedBrand = z.object({
     )
     .describe("1–3 getting-started flows for tutorial videos"),
   imageryStyle: z.array(z.string()).describe("3–6 tags describing the site's imagery, e.g. 'bright product photos', 'flat illustrations', 'dark UI screenshots'"),
+  typography: z.string().describe("One sentence on the type, from the screenshot: the feel of the heading and body fonts together, e.g. 'An elegant high-contrast serif for headlines over a plain geometric sans'"),
 });
 export type ExtractedBrand = z.infer<typeof extractedBrand>;
 

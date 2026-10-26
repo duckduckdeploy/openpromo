@@ -4,7 +4,8 @@
  * YepAPI has no media-model list endpoint and its queue does not reject options a model does not
  * support (the job fails later instead), so this table is the schema we check requests against.
  * Prices are estimates for budgets and reservations; the real charge is the job's `costUsd`.
- * Source: YepAPI docs and live calls, 2026-10-25.
+ * Source: YepAPI docs, live calls and a side-by-side test of 18 image, 17 video and 16 voice models
+ * on the same prompts (2026-10-26). The defaults are the winners on quality for the price.
  */
 
 export type MediaKind = 'image' | 'video' | 'speech' | 'music';
@@ -36,6 +37,24 @@ const VERTICAL_VIDEO = ['16:9', '9:16'] as const;
 export const MEDIA_MODELS: readonly MediaModel[] = [
   // Images
   {
+    id: 'openai/gpt-image-2',
+    kind: 'image',
+    label: 'GPT Image 2',
+    note: 'Best default: exact lettering, keeps people and characters the same from a reference',
+    aspectRatios: ['1:1', '3:2', '2:3', '4:3', '3:4', '16:9', '9:16', '21:9'],
+    acceptsImage: true,
+    estimateUsd: 0.05,
+  },
+  {
+    id: 'bytedance-seed/seedream-4.5',
+    kind: 'image',
+    label: 'Seedream 4.5',
+    note: 'Sharpest photos (1440×2560), fast',
+    aspectRatios: ['1:1', '4:3', '3:4', '3:2', '2:3', '16:9', '9:16', '4:5', '5:4', '21:9'],
+    acceptsImage: true,
+    estimateUsd: 0.08,
+  },
+  {
     id: 'black-forest-labs/flux.2-klein-4b',
     kind: 'image',
     label: 'FLUX.2 Klein',
@@ -48,7 +67,7 @@ export const MEDIA_MODELS: readonly MediaModel[] = [
     id: 'google/nano-banana-3-flash',
     kind: 'image',
     label: 'Nano Banana 3 Flash',
-    note: 'Best default: faithful product and logo reuse',
+    note: 'Faithful product and logo reuse; 2K and 4K output',
     aspectRatios: A_COMMON,
     acceptsImage: true,
     resolutions: ['512', '1K', '2K', '4K'],
@@ -74,6 +93,49 @@ export const MEDIA_MODELS: readonly MediaModel[] = [
     estimateUsd: 0.11,
   },
   // Video (per second)
+  {
+    id: 'kwaivgi/kling-v3.0-pro',
+    kind: 'video',
+    label: 'Kling 3.0 Pro',
+    note: '1080p, natural speech with lip-sync, smooth motion',
+    aspectRatios: ['16:9', '9:16', '1:1'],
+    acceptsImage: true,
+    durations: [3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15],
+    resolutions: ['720p'],
+    estimateUsd: 0.35,
+  },
+  {
+    id: 'x-ai/grok-imagine-video-1.5',
+    kind: 'video',
+    label: 'Grok Imagine Video 1.5',
+    note: 'Most natural motion when animating a photo of real people',
+    aspectRatios: ['16:9', '9:16', '1:1', '4:3', '3:4', '3:2', '2:3'],
+    acceptsImage: true,
+    durations: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15],
+    resolutions: ['480p', '720p', '1080p'],
+    estimateUsd: 0.3,
+  },
+  {
+    id: 'minimax/hailuo-3',
+    kind: 'video',
+    label: 'Hailuo 3',
+    note: '1440p, strong for talking people and characters',
+    aspectRatios: ['16:9', '9:16', '1:1', '4:3', '3:4', '21:9'],
+    acceptsImage: true,
+    durations: [5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15],
+    estimateUsd: 0.27,
+  },
+  {
+    id: 'bytedance/seedance-1-5-pro',
+    kind: 'video',
+    label: 'Seedance 1.5 Pro',
+    note: 'Budget animation for characters and illustrations (no real faces)',
+    aspectRatios: ['16:9', '9:16', '1:1', '4:3', '3:4', '21:9'],
+    acceptsImage: true,
+    durations: [4, 5, 6, 7, 8, 9, 10, 11, 12],
+    resolutions: ['480p', '720p', '1080p'],
+    estimateUsd: 0.06,
+  },
   {
     id: 'google/veo-3-lite',
     kind: 'video',
@@ -108,6 +170,28 @@ export const MEDIA_MODELS: readonly MediaModel[] = [
     estimateUsd: 0.18,
   },
   // Speech (per 1,000 characters, $0.01 minimum per job)
+  {
+    id: 'elevenlabs/eleven-v4',
+    kind: 'speech',
+    label: 'ElevenLabs v4',
+    note: 'Most natural and expressive voiceover, 90+ languages',
+    aspectRatios: [],
+    acceptsImage: false,
+    defaultVoice: 'sarah',
+    estimateUsd: 0.1688,
+    minUsd: 0.01,
+  },
+  {
+    id: 'minimax/speech-2.8-hd',
+    kind: 'speech',
+    label: 'MiniMax Speech 2.8 HD',
+    note: 'Expressive narrator voices',
+    aspectRatios: [],
+    acceptsImage: false,
+    defaultVoice: 'English_expressive_narrator',
+    estimateUsd: 0.211,
+    minUsd: 0.01,
+  },
   {
     id: 'microsoft/mai-voice-2.1-flash',
     kind: 'speech',
@@ -152,9 +236,9 @@ export const MEDIA_MODELS: readonly MediaModel[] = [
 ];
 
 export const DEFAULT_MEDIA_MODELS: Record<MediaKind, string> = {
-  image: 'google/nano-banana-3-flash',
+  image: 'openai/gpt-image-2',
   video: 'google/veo-3-lite',
-  speech: 'microsoft/mai-voice-2.1-flash',
+  speech: 'elevenlabs/eleven-v4',
   music: 'google/lyria-3-clip',
 };
 

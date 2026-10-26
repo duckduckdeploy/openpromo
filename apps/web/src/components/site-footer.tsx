@@ -63,6 +63,11 @@ export function SiteFooter() {
               </Link>
             </li>
             <li>
+              <Link href="/templates" className={linkClass}>
+                Templates
+              </Link>
+            </li>
+            <li>
               <Link href="/glossary" className={linkClass}>
                 Marketing glossary
               </Link>

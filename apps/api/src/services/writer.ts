@@ -51,6 +51,7 @@ export function brandBrief(brand: BrandProfile): string {
     `Voice: ${brand.voice.tone}; ${brand.voice.casual > 60 ? "casual" : brand.voice.casual < 40 ? "formal" : "neutral"}, ${brand.voice.playful > 60 ? "playful" : "serious"}. Sample lines: ${brand.voice.sampleLines.map((l) => `"${l}"`).join(" ")}`,
     brand.voice.avoid.length ? `Never say: ${brand.voice.avoid.join(", ")}` : "",
     brand.flows.length ? `Getting-started flows:\n${brand.flows.map((f) => `  - ${f.title}: ${f.steps.join(" → ")}`).join("\n")}` : "",
+    `Look: a ${brand.visual.theme} site; brand colour ${brand.visual.colors.primary}${brand.visual.typography ? `; type: ${brand.visual.typography}` : ""}.`,
     brand.visual.imageryStyle.length ? `Imagery style: ${brand.visual.imageryStyle.join(", ")}` : "",
   ]
     .filter(Boolean)

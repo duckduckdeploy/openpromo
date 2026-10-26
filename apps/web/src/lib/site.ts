@@ -26,6 +26,7 @@ export const SITE_DESCRIPTION =
 
 export const NAV_LINKS = [
   { href: '/features', label: 'Features' },
+  { href: '/templates', label: 'Templates' },
   { href: '/compare', label: 'Compare' },
   { href: '/pricing', label: 'Pricing' },
   { href: '/docs', label: 'Docs' },

@@ -16,7 +16,7 @@ description: Make on-brand images and carousels for Instagram, LinkedIn, Faceboo
 
 1. **Brief.** Agree what the post says, who it is for, and where it goes. Pick the type and size: `image` (square, portrait 4:5, story 9:16, link 1.91:1, X header, LinkedIn banner) or `carousel` (square or portrait; it also renders a PDF for LinkedIn).
 2. **Pictures.** `list_assets` with `role: "screenshot,product,photo"`. Real screenshots and product photos beat AI pictures; only allow generated ones (`allow_generated`) when nothing fits.
-3. **Write.** `create_creation`. Read the scenes and `checks`:
+3. **Write.** `create_creation`, with a `template_id` from `list_templates` when a style fits (quote card, offer, comic panel, product spotlight, tips carousel…). Read the scenes and `checks`:
    - errors (a layout with no picture, no headline) must be fixed;
    - warnings about figures not on the website mean: confirm they are true or remove them;
    - generic words (seamless, revolutionize…) should be replaced with what the product actually does.

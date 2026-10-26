@@ -138,6 +138,19 @@ describe('runMediaJob', () => {
     expect(result).toMatchObject({ jobId: 'job-9', costUsd: 0.04 });
   });
 
+  it('waits out a status outage instead of failing the job', async () => {
+    const outage = () => reply(503, { ok: false, error: { code: 'UPSTREAM_ERROR', message: 'Service unavailable' } });
+    const { fetch, requests } = fakeFetch(
+      outage(),
+      outage(),
+      ok({ jobId: 'job-o', status: 'completed', costUsd: 0.64, result: { video: { mimeType: 'video/mp4', base64: BASE64 } } }),
+    );
+    const yep = createYepApi({ apiKey: KEY, fetch, maxRetries: 0 });
+    const result = await runMediaJob(yep, request, { jobId: 'job-o', pollMs: 1 });
+    expect(result).toMatchObject({ jobId: 'job-o', costUsd: 0.64 });
+    expect(requests).toHaveLength(3);
+  });
+
   it('throws MEDIA_JOB_FAILED when the job fails', async () => {
     const { fetch, requests } = fakeFetch(
       ok({ jobId: 'job-f', status: 'pending', model: request.model, category: 'image' }),

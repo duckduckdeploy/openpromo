@@ -142,10 +142,11 @@ export class YepApiError extends Error {
   /**
    * True when retrying a paid call cannot bill twice: a 429 (refused before any work) or a
    * connection that failed before the request was sent. A 5xx or a connection lost mid-call
-   * may have been billed already, so paid calls are not retried on those.
+   * may have been billed already, so paid calls are not retried on those. AI_UPSTREAM_ERROR is the
+   * exception: the model provider failed before answering, and YepAPI only bills completed calls.
    */
   get isRetryableWhenBilled(): boolean {
-    return this.isRateLimited || (this.isNetworkError && this.requestSent === false);
+    return this.isRateLimited || (this.isNetworkError && this.requestSent === false) || this.code === 'AI_UPSTREAM_ERROR';
   }
 
   get kind(): YepApiErrorKind {

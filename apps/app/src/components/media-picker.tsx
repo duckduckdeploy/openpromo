@@ -49,7 +49,7 @@ export function MediaPicker({
   const choices = (assets.data ?? []).filter((a) => a.kind === "image" || (allowVideo && a.kind === "video"));
 
   const pick = (asset: Asset) => {
-    onChange({ assetId: asset.id, generate: null, fit: value?.fit ?? (asset.role === "product" || asset.role === "logo" ? "contain" : "cover"), focus: null });
+    onChange({ assetId: asset.id, generate: null, made: null, fit: value?.fit ?? (asset.role === "product" || asset.role === "logo" ? "contain" : "cover"), focus: null, keepAudio: value?.keepAudio ?? false, motion: value?.motion ?? "none" });
     setOpen(false);
   };
 
@@ -93,9 +93,12 @@ export function MediaPicker({
           onClick={() =>
             onChange({
               assetId: null,
-              generate: { kind: "video", prompt: "Slow, gentle camera push-in with subtle natural motion. Keep the subject as it is.", model: null, sourceAssetId: selected.id },
+              made: null,
+              generate: { kind: "video", prompt: "Slow, gentle camera push-in with subtle natural motion. Keep the subject as it is.", model: null, sourceAssetId: selected.id, keyframe: null, castIds: [], referenceAssetIds: [], allowText: false },
               fit: "cover",
               focus: null,
+              keepAudio: false,
+              motion: "none",
             })
           }
         >
@@ -175,7 +178,7 @@ export function MediaPicker({
                   size="sm"
                   disabled={!prompt.trim()}
                   onClick={() => {
-                    onChange({ assetId: null, generate: { kind: "image", prompt: prompt.trim(), model: null, sourceAssetId: null }, fit: "cover", focus: null });
+                    onChange({ assetId: null, made: null, generate: { kind: "image", prompt: prompt.trim(), model: null, sourceAssetId: null, keyframe: null, castIds: [], referenceAssetIds: [], allowText: false }, fit: "cover", focus: null, keepAudio: false, motion: "none" });
                     setOpen(false);
                   }}
                 >

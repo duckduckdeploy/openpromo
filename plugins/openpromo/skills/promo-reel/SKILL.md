@@ -15,12 +15,14 @@ description: Make a 15–40 second vertical promo reel for Instagram Reels, TikT
 ## Steps
 
 1. **Angle.** Agree one message: a product, an offer, a proof point or a tip. One reel, one idea. Check it is in the brand profile (`get_brand`).
-2. **Write.** `create_creation` with `type: "reel"` (and `idea_id` if it came from an idea). Check:
+2. **Style.** `list_templates` with `type: "reel"` and suggest two or three that fit the brand and the angle (a UGC review, a mascot skit, a comic story, a cinematic product film, kinetic type…), with their example links and prices. Let the owner pick.
+3. **Write.** `create_creation` with `type: "reel"`, the `template_id` (and `idea_id` if it came from an idea). Check:
    - scene 1 is a hook a viewer understands in two seconds;
    - every scene's narration says the on-screen point in other words, and sounds natural read aloud;
    - the last scene asks for one action.
-3. **Fix.** Act on the `checks`. A scene that is too short for its voiceover is stretched at render time, but shorter narration is usually better.
+4. **Fix.** Act on the `checks`. A scene that is too short for its voiceover is stretched at render time, but shorter narration is usually better.
+   To change things in plain words ("warmer colours", "the mascot wears a scarf", "shorter voiceover"), use `chat_edit_creation`: only what changes is made again.
    Captions: the writer picks a look from the brand's voice. To change it, update `spec.captionStyle.preset` (`bold-pop`, `box-highlight`, `karaoke-pill`, `karaoke-pill-dark`, `word-slam`, `minimal`, `word-reveal`). `spec.scenes[].emphasis` lists the words shown in the highlight colour.
-4. **Price.** Count it before rendering: voiceover about $0.01 per scene, music $0.08 unless reused, AI pictures $0.04–0.20 each, AI clips about $0.11 a second. Get a yes.
-5. **Render.** `render_creation`; poll `get_render` (a 30-second reel takes one to three minutes). It produces the MP4, a thumbnail and an SRT caption file.
-6. **Post.** Give the caption, and suggest uploading the SRT too where the platform takes it.
+5. **Price.** Count it before rendering: voiceover about $0.01 per scene, music $0.08 unless reused, AI pictures $0.04–0.20 each, AI clips about $0.11 a second ($0.30 for animated photos of real people); the template's typical price is in `list_templates`. Get a yes.
+6. **Render.** `render_creation`; poll `get_render` (a text-and-photo reel takes one to three minutes; one with AI clips five to fifteen). It produces the MP4, a thumbnail and an SRT caption file.
+7. **Post.** Give the caption, and suggest uploading the SRT too where the platform takes it.

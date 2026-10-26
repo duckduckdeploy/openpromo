@@ -2,12 +2,13 @@ import { copyFile, mkdir, readFile, rm, writeFile } from "node:fs/promises";
 import { createRequire } from "node:module";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
-import { captionCues, captionLimits, captionPreset, imageDocument, toSrt, videoDocument, type CaptionCue, type DocumentInput, type RenderAssets, type SpokenLine, type VoiceClip } from "@openpromo/render";
-import { CREATION_TYPES, creationSpec, MEDIA_FORMATS, type BrandProfile, type CreationSpec, type MediaFormat, type MediaRef } from "@openpromo/shared";
-import { nearestAspectRatio } from "@openpromo/yepapi";
+import { backdropOf, captionCues, captionLimits, captionPreset, imageDocument, toSrt, videoDocument, type CaptionCue, type DocumentInput, type RenderAssets, type SpokenLine, type VoiceClip } from "@openpromo/render";
+import { CREATION_TYPES, creationSpec, getTemplate, MEDIA_FORMATS, type BrandProfile, type CreationSpec, type MediaFormat, type MediaRef } from "@openpromo/shared";
+import { DEFAULT_MEDIA_MODELS, mediaModel, nearestAspectRatio } from "@openpromo/yepapi";
 import { eq, inArray } from "drizzle-orm";
 import { dataDb, schema } from "../../db";
-import { voicedSpans } from "../../lib/ffmpeg";
+import { env } from "../../env";
+import { ffmpeg, mediaDurationMs, voicedSpans } from "../../lib/ffmpeg";
 import { localFile, mediaRoot, saveAsset, type Asset } from "../../lib/media-store";
 import { errorMessage } from "../../lib/yep";
 import { withPage } from "../browser";
@@ -44,13 +45,79 @@ function referencesFor(ctx: Ctx): string[] {
   return [ctx.brand.visual.logoAssetId].filter((id): id is string => Boolean(id));
 }
 
-async function fillMedia(ctx: Ctx, ref: MediaRef | null, role: "background" | "broll" | "photo", target: string): Promise<void> {
+/** The art direction for every picture and clip: the template's look, else the brand's imagery style. */
+function styleOf(ctx: Ctx): string {
+  const template = ctx.spec.templateId ? getTemplate(ctx.spec.templateId) : undefined;
+  return template?.look || ctx.brand.visual.imageryStyle.join(", ");
+}
+
+/** The shortest clip length the model makes that covers the scene. */
+function clipSeconds(model: string, sceneMs: number): string {
+  const lengths = mediaModel(model)?.durations ?? [4, 6, 8];
+  const wanted = sceneMs / 1000;
+  return String(lengths.find((s) => s >= wanted) ?? lengths[lengths.length - 1]);
+}
+
+/** Draws each cast member's reference sheet once; every scene they appear in is drawn from it. */
+async function fillCast(ctx: Ctx): Promise<void> {
+  const style = styleOf(ctx);
+  for (const member of ctx.spec.cast) {
+    if (member.sheetAssetId) continue;
+    const model = DEFAULT_MEDIA_MODELS.image;
+    const asset = await generateAsset({
+      projectId: ctx.project.id,
+      userId: ctx.project.userId,
+      creationId: ctx.creation.id,
+      target: `cast:${member.id}`,
+      kind: "image",
+      role: "photo",
+      model,
+      prompt: `Character reference sheet for ${member.name}: ${member.description}. Full body, facing the camera, then a close-up of the face, on a plain light background. ${style ? `Style: ${style}. ` : ""}No text, no letters, no logos.`,
+      options: { aspectRatio: nearestAspectRatio(model, 3, 2) ?? "3:2" },
+      name: `Cast: ${member.name}`,
+    });
+    member.sheetAssetId = asset.id;
+  }
+}
+
+async function fillMedia(ctx: Ctx, ref: MediaRef | null, role: "background" | "broll" | "photo", target: string, sceneMs = 6000, dialogue = ""): Promise<void> {
   if (!ref?.generate || ref.assetId) return;
   const { width, height } = MEDIA_FORMATS[ctx.format];
   const kind = ref.generate.kind;
-  const model = ref.generate.model ?? undefined;
-  const style = ctx.brand.visual.imageryStyle.join(", ");
-  const prompt = `${ref.generate.prompt}${style ? `. Visual style: ${style}` : ""}. No text, no letters, no logos.`;
+  const style = styleOf(ctx);
+  const cast = ref.generate.castIds
+    .map((id) => ctx.spec.cast.find((c) => c.id === id))
+    .filter((c): c is NonNullable<typeof c> => Boolean(c?.sheetAssetId));
+  const castRefs = [...cast.map((c) => c.sheetAssetId!), ...ref.generate.referenceAssetIds].slice(0, 4);
+  // A reference sheet has several views side by side; without this the model copies that layout.
+  const single = " One single full-frame shot: not a collage, no panels, no split screen, no borders.";
+  const castNote = cast.length ? ` Keep ${cast.map((c) => c.name).join(" and ")} exactly as in the reference sheet (same face, body, clothes and colours).${single}` : castRefs.length ? single : "";
+  const noText = ref.generate.allowText ? "" : " No text, no letters, no logos.";
+
+  // A clip that starts from a drawn keyframe: draw it first, so the cast and the product look right.
+  if (kind === "video" && !ref.generate.sourceAssetId && ref.generate.keyframe) {
+    const imageModel = DEFAULT_MEDIA_MODELS.image;
+    const frame = await generateAsset({
+      projectId: ctx.project.id,
+      userId: ctx.project.userId,
+      creationId: ctx.creation.id,
+      target: `${target}:keyframe`,
+      kind: "image",
+      role: "photo",
+      model: imageModel,
+      prompt: `${ref.generate.keyframe}${style ? `. Visual style: ${style}` : ""}.${castNote || single}${noText}`,
+      options: { aspectRatio: nearestAspectRatio(imageModel, width, height) ?? "1:1" },
+      referenceAssetIds: castRefs.length ? castRefs : referencesFor(ctx),
+      name: `Keyframe: ${ref.generate.keyframe.slice(0, 70)}`,
+    });
+    ref.generate.sourceAssetId = frame.id;
+  }
+
+  const template = ctx.spec.templateId ? getTemplate(ctx.spec.templateId) : undefined;
+  const model = ref.generate.model ?? (kind === "video" ? template?.models?.video : template?.models?.image) ?? DEFAULT_MEDIA_MODELS[kind === "video" ? "video" : "image"];
+  const speech = dialogue.trim() ? ` The person says, clearly and naturally: "${dialogue.trim()}"` : "";
+  const sound = kind === "video" ? (ref.keepAudio ? (speech ? "" : " Natural ambient sound only, no speech.") : " No dialogue, no speech.") : "";
+  const prompt = kind === "video" ? `${ref.generate.prompt}${style ? `. Visual style: ${style}` : ""}.${speech}${sound}${noText}` : `${ref.generate.prompt}${style ? `. Visual style: ${style}` : ""}.${castNote}${noText}`;
   const asset = await generateAsset({
     projectId: ctx.project.id,
     userId: ctx.project.userId,
@@ -62,33 +129,62 @@ async function fillMedia(ctx: Ctx, ref: MediaRef | null, role: "background" | "b
     prompt,
     options:
       kind === "video"
-        ? { aspectRatio: width >= height ? "16:9" : "9:16", duration: "6", resolution: "720p" }
-        : { aspectRatio: nearestAspectRatio(model ?? "google/nano-banana-3-flash", width, height) ?? "1:1" },
+        ? {
+            aspectRatio: width >= height ? "16:9" : "9:16",
+            duration: clipSeconds(model, sceneMs),
+            resolution: "720p",
+            ...(ref.keepAudio ? { generateAudio: true } : {}),
+          }
+        : { aspectRatio: nearestAspectRatio(model, width, height) ?? "1:1" },
     referenceAssetIds:
-      kind === "video" ? (ref.generate.sourceAssetId ? [ref.generate.sourceAssetId] : []) : role !== "background" ? referencesFor(ctx) : [],
+      kind === "video"
+        ? ref.generate.sourceAssetId
+          ? [ref.generate.sourceAssetId]
+          : []
+        : castRefs.length
+          ? castRefs
+          : role !== "background"
+            ? referencesFor(ctx)
+            : [],
     // A first frame must already have the clip's shape, or the model pads or crops it on its own.
     referenceSize: kind === "video" && ref.generate.sourceAssetId ? (width >= height ? { width: 1280, height: 720 } : { width: 720, height: 1280 }) : undefined,
     name: ref.generate.prompt.slice(0, 80),
   });
   ref.assetId = asset.id;
+  ref.made = ref.generate;
   ref.generate = null;
 }
 
-/** Generates every picture and clip the spec asks for but does not have yet, and stores the ids in it. */
+/** Runs `work` over `items`, at most `limit` at a time. */
+async function eachLimit<T>(items: T[], limit: number, work: (item: T) => Promise<void>): Promise<void> {
+  const queue = [...items];
+  await Promise.all(Array.from({ length: Math.min(limit, queue.length) }, async () => {
+    while (queue.length) await work(queue.shift()!);
+  }));
+}
+
+/** Scenes whose pictures and clips are made at the same time. AI clips take minutes each. */
+const MEDIA_PARALLEL = 4;
+
+/**
+ * Generates every picture and clip the spec asks for but does not have yet, and stores the ids in
+ * it. Cast sheets come first, since the scenes are drawn from them; then the scenes in parallel.
+ */
 export async function fillSceneMedia(ctx: Ctx): Promise<void> {
-  for (const scene of ctx.spec.scenes) {
-    await fillMedia(ctx, scene.media, "photo", `scene:${scene.id}:media`);
-    await fillMedia(ctx, scene.background, "background", `scene:${scene.id}:background`);
-  }
+  await fillCast(ctx);
+  await eachLimit(ctx.spec.scenes, MEDIA_PARALLEL, async (scene) => {
+    await fillMedia(ctx, scene.media, "photo", `scene:${scene.id}:media`, scene.durationMs, scene.dialogue);
+    await fillMedia(ctx, scene.background, "background", `scene:${scene.id}:background`, scene.durationMs);
+  });
 }
 
 /** One voice line per scene with narration; their lengths decide the scene timings. */
 async function fillVoice(ctx: Ctx): Promise<Map<string, Asset>> {
   const lines = new Map<string, Asset>();
   if (!ctx.spec.audio.voice.enabled) return lines;
-  for (const scene of ctx.spec.scenes) {
+  await eachLimit(ctx.spec.scenes, MEDIA_PARALLEL, async (scene) => {
     const text = scene.narration.trim();
-    if (!text) continue;
+    if (!text) return;
     const asset = await generateAsset({
       projectId: ctx.project.id,
       userId: ctx.project.userId,
@@ -102,7 +198,7 @@ async function fillVoice(ctx: Ctx): Promise<Map<string, Asset>> {
       name: `Voice: ${text.slice(0, 60)}`,
     });
     lines.set(scene.id, asset);
-  }
+  });
   return lines;
 }
 
@@ -250,18 +346,48 @@ export function sceneTimings(durations: number[], voiceMs: Array<number | null>)
 
 async function renderVideo(ctx: Ctx, render: Render, voice: Map<string, Asset>, music: Asset | null) {
   ensureFfmpegOnPath();
+  // Hyperframes allows a page 60 s to load; a reel with a dozen AI clips needs longer on a busy server.
+  process.env.PRODUCER_PAGE_NAVIGATION_TIMEOUT_MS ??= "240000";
+  process.env.PRODUCER_PLAYER_READY_TIMEOUT_MS ??= "180000";
   const ids = assetIds(ctx.spec, ctx.brand, [...[...voice.values()].map((a) => a.id), ...(music ? [music.id] : [])]);
   const folder = await renderFolder(render.id, ctx.project.id, ids);
   const gsap = require.resolve("gsap/dist/gsap.min.js");
   await copyFile(gsap, path.join(folder.dir, "gsap.min.js"));
 
+  // Clips that keep their own sound (on-camera speech, close-up sound) play it as a track of their
+  // own, and the scene lasts as long as the clip.
+  const clipAudio = new Map<string, { path: string; durationMs: number }>();
+  for (const scene of ctx.spec.scenes) {
+    const ref = backdropOf(scene);
+    const file = ref?.assetId ? folder.assets.files[ref.assetId] : undefined;
+    if (!ref?.keepAudio || !file?.video) continue;
+    const audioPath = `clip-audio-${scene.id}.m4a`;
+    try {
+      await ffmpeg(["-y", "-i", path.join(folder.dir, file.path), "-vn", "-ac", "2", "-ar", "44100", "-c:a", "aac", "-b:a", "160k", path.join(folder.dir, audioPath)]);
+      const durationMs = await mediaDurationMs(path.join(folder.dir, audioPath));
+      if (durationMs) clipAudio.set(scene.id, { path: audioPath, durationMs });
+    } catch {
+      // A clip without an audio stream simply stays silent.
+    }
+  }
+
   const timing = sceneTimings(
-    ctx.spec.scenes.map((s) => s.durationMs),
-    ctx.spec.scenes.map((s) => voice.get(s.id)?.durationMs ?? null),
+    ctx.spec.scenes.map((s) => (clipAudio.has(s.id) ? Math.min(s.durationMs, clipAudio.get(s.id)!.durationMs) : s.durationMs)),
+    ctx.spec.scenes.map((s) => voice.get(s.id)?.durationMs ?? (clipAudio.has(s.id) ? clipAudio.get(s.id)!.durationMs - 450 : null)),
   );
   const voiceClips: VoiceClip[] = [];
   const spoken: SpokenLine[] = [];
   for (const [i, scene] of ctx.spec.scenes.entries()) {
+    const own = clipAudio.get(scene.id);
+    if (own) {
+      const startMs = timing.starts[i]!;
+      voiceClips.push({ path: own.path, startMs, durationMs: Math.min(own.durationMs, timing.durations[i]!) });
+      if (scene.dialogue.trim() && ctx.spec.captions !== "none") {
+        const voiced = await voicedSpans(path.join(folder.dir, own.path), own.durationMs);
+        spoken.push({ text: scene.dialogue, startMs, durationMs: own.durationMs, voiced, emphasis: scene.emphasis });
+      }
+      continue;
+    }
     const line = voice.get(scene.id);
     if (!line?.durationMs) continue;
     const startMs = timing.starts[i]! + 150;
@@ -315,6 +441,23 @@ async function renderVideo(ctx: Ctx, render: Render, voice: Map<string, Asset>, 
   return { outputs: [video.id], posterAssetId: posterAsset.id, captionsAssetId };
 }
 
+/**
+ * Chrome and ffmpeg are the heavy part of a render; making the media is mostly waiting on YepAPI.
+ * Renders are taken from the queue several at a time, and only the drawing waits for a slot.
+ */
+let drawing = 0;
+const waitingToDraw: Array<() => void> = [];
+async function withDrawSlot<T>(work: () => Promise<T>): Promise<T> {
+  if (drawing >= env.RENDER_CONCURRENCY) await new Promise<void>((resolve) => waitingToDraw.push(resolve));
+  drawing++;
+  try {
+    return await work();
+  } finally {
+    drawing--;
+    waitingToDraw.shift()?.();
+  }
+}
+
 /** Runs a queued render to the end; failures are recorded on the render and the creation. */
 export async function runRender(renderId: string): Promise<void> {
   const [render] = await dataDb.select().from(schema.renders).where(eq(schema.renders.id, renderId));
@@ -336,16 +479,16 @@ export async function runRender(renderId: string): Promise<void> {
     await dataDb.update(schema.creations).set({ spec: ctx.spec }).where(eq(schema.creations.id, creation.id));
     await progress(renderId, 30);
 
-    const result = isVideo
-      ? await renderVideo(ctx, render, voice, music)
-      : await (async () => {
+    const result = await withDrawSlot<{ outputs: string[]; posterAssetId: string | null; captionsAssetId: string | null }>(() => isVideo
+      ? renderVideo(ctx, render, voice, music)
+      : (async () => {
           const folder = await renderFolder(renderId, project.id, assetIds(ctx.spec, ctx.brand));
           try {
             return await renderStills(ctx, render, folder);
           } finally {
             await rm(folder.dir, { recursive: true, force: true });
           }
-        })();
+        })());
 
     await dataDb
       .update(schema.renders)

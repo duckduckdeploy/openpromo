@@ -23,6 +23,7 @@ function sectionOf(path: string): string {
       compare: 'Comparison',
       pricing: 'Pricing',
       glossary: 'Glossary',
+      templates: 'Templates',
     }[first] ?? ''
   );
 }

@@ -8,7 +8,13 @@ import type { ReadPage } from "./page-script";
 
 type Weighted = Array<{ hex: string; weight: number }>;
 
-const isNeutral = (hex: string) => saturation(hex) < 0.18;
+/** How far a colour is from grey, 0–255. HSL saturation calls pale creams "saturated"; chroma does not. */
+const chroma = (hex: string) => {
+  const n = parseInt(hex.slice(1), 16);
+  const rgb = [(n >> 16) & 255, (n >> 8) & 255, n & 255];
+  return Math.max(...rgb) - Math.min(...rgb);
+};
+const isNeutral = (hex: string) => saturation(hex) < 0.18 || chroma(hex) < 36;
 const isExtreme = (hex: string) => {
   const l = contrast(hex, "#000000");
   return l < 1.15 || contrast(hex, "#ffffff") < 1.08;

@@ -109,6 +109,10 @@ export const brandProfile = z.object({
     /** A light version for dark backgrounds, when the site has one. */
     logoLightAssetId: z.string().nullable().default(null),
     radius: z.number().int().min(0).max(48).default(12),
+    /** Whether the site is light on dark or dark on light; templates follow it. */
+    theme: z.enum(["light", "dark"]).default("light"),
+    /** How the heading and body fonts read together, in a sentence, for art direction. */
+    typography: z.string().max(240).default(""),
     imageryStyle: z.array(z.string().max(60)).max(8).default([]),
   }),
   products: z.array(product).max(24).default([]),

@@ -102,6 +102,9 @@ function body(ctx: SceneContext, scene: Scene): string {
       const rest = short === t.headline ? "" : headline;
       return `<div class="stack center grow">${eyebrow}${short ? `<div class="badge in">${esc(short)}</div>` : ""}${rest}${text}${cta(t.cta)}</div>${footer(ctx)}`;
     }
+    case "full":
+      // The picture is the scene (drawn as the backdrop); text, when there is any, is a short overlay.
+      return `<div class="stack full-text grow">${eyebrow}${headline}${text}${cta(t.cta)}</div>`;
     case "cta":
       return `<div class="stack center grow"><div class="in">${logo(ctx, "logo big")}</div>${headline}${text}${cta(t.cta)}<div class="domain in">${esc(domainOf(ctx.brand.identity.url))}</div></div>`;
     case "hero":
@@ -110,9 +113,14 @@ function body(ctx: SceneContext, scene: Scene): string {
   }
 }
 
+/** What fills the frame behind the text: the main picture for full-frame scenes, else the background. */
+export function backdropOf(scene: Scene): Scene["background"] {
+  return scene.layout === "full" ? (scene.media ?? scene.background) : scene.background;
+}
+
 /** The look a scene gets: a photo backdrop wins; otherwise the creation's style. */
 export function lookOf(ctx: SceneContext, scene: Scene): "photo" | "bold" | "clean" {
-  if (scene.background && ctx.url(scene.background.assetId)) return "photo";
+  if (ctx.url(backdropOf(scene)?.assetId)) return "photo";
   // Offers always shout; with the bold style every scene sits on the brand colour.
   if (ctx.style === "bold" || scene.layout === "offer") return "bold";
   return "clean";
@@ -121,14 +129,16 @@ export function lookOf(ctx: SceneContext, scene: Scene): "photo" | "bold" | "cle
 /** One scene's markup. In video mode the backdrop is drawn by a separate clip, so it is left out. */
 export function sceneHtml(ctx: SceneContext, scene: Scene, attrs = "", extraClass = ""): string {
   const look = lookOf(ctx, scene);
-  const bgSrc = ctx.url(scene.background?.assetId);
+  const backdropRef = backdropOf(scene);
+  const bgSrc = ctx.url(backdropRef?.assetId);
   const backdrop =
     look === "photo" && bgSrc && ctx.mode === "image"
-      ? ctx.isVideo(scene.background?.assetId)
+      ? ctx.isVideo(backdropRef?.assetId)
         ? `<video class="backdrop" src="${esc(bgSrc)}" muted playsinline></video>`
         : `<img class="backdrop" src="${esc(bgSrc)}" alt="">`
       : "";
-  const scrim = look === "photo" ? `<div class="scrim"></div>` : "";
+  const hasText = Boolean(scene.text.headline.trim() || scene.text.body.trim() || scene.text.eyebrow.trim() || scene.text.cta.trim());
+  const scrim = look === "photo" && (scene.layout !== "full" || hasText) ? `<div class="scrim"></div>` : "";
   return `<section class="${extraClass ? `${extraClass} ` : ""}scene look-${look} layout-${scene.layout} shape-${shapeOf(ctx.format)}" data-scene="${esc(scene.id)}"${attrs}>${backdrop}${scrim}<div class="content">${body(ctx, scene)}</div></section>`;
 }
 
@@ -145,6 +155,14 @@ body { font-family: var(--font-body); color: var(--text); -webkit-font-smoothing
 .backdrop { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
 .scrim { position: absolute; inset: 0; background: linear-gradient(180deg, rgba(0,0,0,.15) 0%, rgba(0,0,0,.35) 45%, rgba(0,0,0,.78) 100%); }
 .shape-wide .scrim { background: linear-gradient(90deg, rgba(0,0,0,.8) 0%, rgba(0,0,0,.45) 55%, rgba(0,0,0,.1) 100%); }
+.layout-full .scrim { background: linear-gradient(180deg, rgba(0,0,0,0) 40%, rgba(0,0,0,.55) 100%); }
+.layout-full.shape-wide .scrim { background: linear-gradient(90deg, rgba(0,0,0,.6) 0%, rgba(0,0,0,0) 60%); }
+.layout-full .full-text { justify-content: flex-end; padding-bottom: 4cqmin; text-shadow: 0 .04em .3em rgba(0,0,0,.45); }
+.layout-full .full-text .headline { max-width: 18ch; }
+.layout-full .headline.xl, .layout-full .headline.lg { font-size: calc(9.5cqmin * var(--fit) * var(--s)); }
+/* In tall videos the bottom half belongs to captions and the apps' buttons: titles go at the top. */
+.clip.layout-full.shape-tall .full-text { justify-content: flex-start; padding-bottom: 0; }
+.clip.layout-full.shape-tall .scrim { background: linear-gradient(180deg, rgba(0,0,0,.55) 0%, rgba(0,0,0,0) 38%); }
 
 .content { position: absolute; inset: 0; display: flex; flex-direction: column; padding: calc(7cqmin * var(--fit) * var(--s)); gap: calc(3cqmin * var(--fit) * var(--s)); }
 .shape-tall .content { padding: 9cqw 8cqw 10cqh; }

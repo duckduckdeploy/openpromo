@@ -909,7 +909,7 @@ export const terms: GlossaryTerm[] = [
       ],
     },
     openpromo: {
-      body: 'OpenPromo has an MCP server with 18 tools to read and edit the brand, write ideas and creations, render and fetch files. ChatGPT and Claude connect with OAuth sign-in; other agents use an API key.',
+      body: 'OpenPromo has an MCP server with 20 tools to read and edit the brand, write ideas and creations, render and fetch files. ChatGPT and Claude connect with OAuth sign-in; other agents use an API key.',
       href: '/docs/mcp',
       label: 'Connect an agent',
     },
@@ -955,7 +955,7 @@ export const terms: GlossaryTerm[] = [
       ],
     },
     openpromo: {
-      body: 'Agents can run the OpenPromo workflow through 18 MCP tools or the REST API, and paid tools state their cost. A monthly spending limit refuses calls that would cross it.',
+      body: 'Agents can run the OpenPromo workflow through 20 MCP tools or the REST API, and paid tools state their cost. A monthly spending limit refuses calls that would cross it.',
       href: '/docs/mcp-tools',
       label: 'See the MCP tools',
     },

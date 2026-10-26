@@ -395,6 +395,17 @@ export default function BrandPage() {
                   <Input value={draft.visual.fonts.body.family} onChange={(e) => set((d) => void (d.visual.fonts.body.family = e.target.value))} />
                 </Field>
               </div>
+              <div className="grid grid-cols-[120px_1fr] gap-3">
+                <Field label="Theme">
+                  <Select value={draft.visual.theme} onChange={(e) => set((d) => void (d.visual.theme = e.target.value as "light" | "dark"))}>
+                    <option value="light">Light</option>
+                    <option value="dark">Dark</option>
+                  </Select>
+                </Field>
+                <Field label="Type" hint="How the fonts feel together; used as art direction">
+                  <Input value={draft.visual.typography} onChange={(e) => set((d) => void (d.visual.typography = e.target.value))} placeholder="e.g. A warm serif for headlines over a clean sans" />
+                </Field>
+              </div>
               <Field label={`Corner radius (${draft.visual.radius}px)`}>
                 <input type="range" min={0} max={32} value={draft.visual.radius} onChange={(e) => set((d) => void (d.visual.radius = Number(e.target.value)))} className="w-full accent-[var(--color-accent)]" />
               </Field>
